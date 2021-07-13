@@ -10,7 +10,7 @@ all:
 	+$(MAKE) -C src
 
 flash: $(BIN_DIR)/$(IMAGE)
-	sudo $(AVRDUDE) -U flash:w:$(BIN_DIR)/$(IMAGE):i
+	$(AVRDUDE) -U flash:w:$(BIN_DIR)/$(IMAGE):i
 
 $(BIN_DIR)/%.hex: $(BIN_DIR)/%.elf
 	avr-objcopy -O ihex -R .eeprom $< $@

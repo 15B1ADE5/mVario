@@ -1,18 +1,17 @@
-TOP_DIR    = ../
+TOP_DIR    = ../../../
 
 include $(TOP_DIR)/make_variables.mk
 
-SRCS       = main.c
+DEPS       = uart.h
+SRCS       = uart.c
 OBJECTS    = $(SRCS:.c=.o)
 OBJECTS    := $(addprefix $(OBJ_DIR)/,$(OBJECTS))
 
 
 all: $(OBJECTS)
-	+$(MAKE) -C hardware
 
-$(OBJ_DIR)/%.o: %.c | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.c $(DEPS) | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
-

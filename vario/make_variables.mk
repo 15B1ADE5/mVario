@@ -1,7 +1,8 @@
 DEVICE     = atmega328p
 CLOCK      = 8000000
+UART_BAUD  = 9600
 CC         = avr-gcc
-CFLAGS     = -c -std=gnu99 -Os -Wall -ffunction-sections -fdata-sections -mmcu=$(DEVICE) -DF_CPU=$(CLOCK)
+CFLAGS     = -c -std=gnu99 -Os -Wall -ffunction-sections -fdata-sections -mmcu=$(DEVICE) -DF_CPU=$(CLOCK) -DBAUD=$(UART_BAUD)
 LINK       = -Os -mmcu=$(DEVICE) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 PROGRAMMER = arduino

@@ -16,7 +16,7 @@ $(BIN_DIR)/%.hex: $(BIN_DIR)/%.elf
 	avr-objcopy -O ihex -R .eeprom $< $@
 
 $(BIN_DIR)/%.elf: all
-	$(CC) $(LINK) $(OBJECTS) -o $@
+	$(CCPP) $(LDFLAGS) $(OBJECTS) -o $@
 
 clean:
 	rm -fr $(BIN_DIR)

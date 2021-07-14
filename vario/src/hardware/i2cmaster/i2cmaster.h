@@ -1,5 +1,11 @@
 #ifndef _I2CMASTER_H
 #define _I2CMASTER_H
+
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /************************************************************************* 
 * Title:    C include file for the I2C master interface 
 *           (i2cmaster.S or twimaster.c)
@@ -173,6 +179,9 @@ extern unsigned char i2c_read(unsigned char ack);
 #define i2c_read(ack)  (ack) ? i2c_readAck() : i2c_readNak(); 
 
 
+#ifdef __cplusplus
+}
+#endif
 
 /**@}*/
 #endif

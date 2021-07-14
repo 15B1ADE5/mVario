@@ -11,13 +11,23 @@
 #define BAUD 9600
 #endif
 
+
+
 #include <stdio.h>
 #include <util/setbaud.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void uart_putc(char c, FILE *stream);
 char uart_getc(FILE *stream);
 
 void uart_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 
 #endif // UART_H

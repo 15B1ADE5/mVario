@@ -1,3 +1,7 @@
+# AVR images
+*.elf
+*.hex
+
 # Prerequisites
 *.d
 

@@ -1,7 +1,7 @@
 DEVICE     = atmega328p
 F_CPU      = 8000000
 # I2C_MODE: TWI/I2C (ATmega328p is TWI compatible)
-I2C_MODE   = I2C
+I2C_MODE   = TWI
 UART_BAUD  = 9600
 
 PROGRAMMER = arduino

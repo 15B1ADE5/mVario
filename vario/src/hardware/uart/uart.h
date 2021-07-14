@@ -11,8 +11,6 @@
 #define BAUD 9600
 #endif
 
-
-
 #include <stdio.h>
 #include <util/setbaud.h>
 

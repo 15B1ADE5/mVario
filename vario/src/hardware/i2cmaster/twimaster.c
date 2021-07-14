@@ -138,7 +138,7 @@ unsigned char i2c_rep_start(unsigned char address)
 void i2c_stop(void)
 {
     /* send stop condition */
-	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO); // for some reason this hangs loop
+	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWSTO);
 	//TWCR = (1<<TWINT)|(1<<TWEN);
 	
 	// wait until stop condition is executed and bus released

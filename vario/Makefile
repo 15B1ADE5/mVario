@@ -2,20 +2,24 @@ TOP_DIR    = ./
 
 include $(TOP_DIR)/make_variables.mk
 
-IMAGE      = main.hex
 OBJECTS    = $(wildcard $(OBJ_DIR)/*.o)
 
 
-all:
+all: usage
+
+build:
 	+$(MAKE) -C src
 
-flash: $(BIN_DIR)/$(IMAGE)
-	$(AVRDUDE) -U flash:w:$(BIN_DIR)/$(IMAGE):i
+flash: $(HEX_FILE)
+	$(AVRDUDE) -U flash:w:$(HEX_FILE):i
 
-$(BIN_DIR)/%.hex: $(BIN_DIR)/%.elf
+$(HEX_FILE): $(ELF_FILE)
 	avr-objcopy -O ihex -R .eeprom $< $@
 
-$(BIN_DIR)/%.elf: all
+usage: $(ELF_FILE)
+	$(AVRSIZE) $<
+
+$(ELF_FILE): build
 	$(CCPP) $(LDFLAGS) $(OBJECTS) -o $@
 
 clean:

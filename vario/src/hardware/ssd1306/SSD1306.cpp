@@ -29,8 +29,8 @@ For more information, please refer to <http://unlicense.org/>
 #include "SSD1306.h"
 #include "../i2cmaster/i2cmaster.h"
 
-SSD1306::SSD1306(uint8_t addr) {
-    this->addr = addr;
+SSD1306::SSD1306(uint8_t dev_addr) {
+    this->dev_addr = dev_addr;
 
     i2c_init();
 
@@ -83,7 +83,7 @@ SSD1306::SSD1306(uint8_t addr) {
 }
 
 void SSD1306::sendCommand(uint8_t command) {
-    i2c_start(addr << 1 | I2C_WRITE);
+    i2c_start(dev_addr << 1 | I2C_WRITE);
     i2c_write(0x00);
     i2c_write(command);
     i2c_stop();
@@ -110,7 +110,7 @@ void SSD1306::sendFramebuffer(uint8_t *buffer) {
     // Our buffer is 1024 bytes long, 1024/16 = 64
     // We have to send 64 packets
     for (uint8_t packet = 0; packet < 64; packet++) {
-        i2c_start(addr << 1 | I2C_WRITE);
+        i2c_start(dev_addr << 1 | I2C_WRITE);
         i2c_write(0x40);
         for (uint8_t packet_byte = 0; packet_byte < 16; ++packet_byte) {
             i2c_write(buffer[packet*16+packet_byte]);

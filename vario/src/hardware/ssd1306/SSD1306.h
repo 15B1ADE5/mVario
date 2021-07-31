@@ -58,9 +58,9 @@ For more information, please refer to <http://unlicense.org/>
 #define SSD1306_BUFFERSIZE (SSD1306_WIDTH*SSD1306_HEIGHT)/8
 
 class SSD1306{
-    uint8_t addr;
+    uint8_t dev_addr;
 public:
-    SSD1306(uint8_t addr = SSD1306_DEFAULT_ADDRESS);
+    SSD1306(uint8_t dev_addr = SSD1306_DEFAULT_ADDRESS);
     void sendFramebuffer(uint8_t *buffer);
     void invert(uint8_t inverted);
 private:

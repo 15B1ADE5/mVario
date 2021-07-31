@@ -181,8 +181,8 @@ unsigned char i2c_readAck(void)
 {
 	TWCR = (1<<TWINT) | (1<<TWEN) | (1<<TWEA);
 	while(!(TWCR & (1<<TWINT)));    
-
-    return TWDR;
+	
+	return TWDR;
 
 }/* i2c_readAck */
 
@@ -197,6 +197,6 @@ unsigned char i2c_readNak(void)
 	TWCR = (1<<TWINT) | (1<<TWEN);
 	while(!(TWCR & (1<<TWINT)));
 	
-    return TWDR;
+	return TWDR;
 
 }/* i2c_readNak */

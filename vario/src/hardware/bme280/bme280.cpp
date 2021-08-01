@@ -6,8 +6,6 @@
 
 #define BME280_CONCAT_BYTES(msb, lsb)	 (((uint16_t)msb << 8) | (uint16_t)lsb)
 
-//static void interleave_reg_addr(const uint8_t *reg_addr, uint8_t *temp_buff, const uint8_t *reg_data, uint8_t len);
-
 int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data, uint32_t len)
 {
 	// Start i2c write
@@ -129,44 +127,6 @@ int8_t BME280driver::write(uint8_t reg_addr, uint8_t data)
 	return BME280_ERR_CONN_FAIL;
 }
 
-
-/*
-int8_t BME280driver::getRegs(uint8_t reg_addr, uint8_t *reg_data, uint16_t len)
-{
-	if (reg_data != NULL)
-	{
-		int ret = dev->read(reg_addr, reg_data, len, dev->intf_ptr);
-		return ret;
-	}
-}
-
-int8_t BME280driver::setRegs(uint8_t *reg_addr, const uint8_t *reg_data, uint8_t len)
-{
-	if (len != 0)
-	{
-		if (len > 1)
-		{
-			for (uint8_t index = 1; index < len; index++)
-			{
-				temp_buff[(index * 2) - 1] = reg_addr[index];
-				temp_buff[index * 2] = reg_data[index];
-			}
-			// Interleave register address w.r.t data for
-			// burst write
-			//
-			interleave_reg_addr(reg_addr, temp_buff, reg_data, len);
-			temp_len = ((len * 2) - 1);
-		}
-		else
-		{
-			temp_len = len;
-		}
-
-		int ret = dev->write(reg_addr[0], temp_buff, temp_len, dev->intf_ptr);
-	}
-}
-*/
-
 int8_t BME280driver::init()
 {
 	int8_t res;
@@ -191,7 +151,7 @@ int8_t BME280driver::init()
 			if (res == BME280_OK)
 			{
 				// Read the calibration data
-				res = getCalibData();
+				res = readCalibData();
 			}
 			break;
 		}
@@ -212,15 +172,15 @@ int8_t BME280driver::init()
 
 BME280driver::BME280driver(uint8_t dev_addr)
 {
+	this->device_ok = false;
 	this->dev_addr = dev_addr;
-	int res = init();
-	printf("BME280 init: %d\n", res);
+	if (init() == BME280_OK) this->device_ok = true;
 }
 
 int8_t BME280driver::softReset()
 {
 	int8_t res;
-	uint8_t status_reg = 0;
+	BME280_reg_status status { .raw = 0 };
 	uint8_t try_run = BME280_RESET_NVM_COPY_WAIT_RETRY; // default 5
 
 	// Write the soft reset command in the sensor
@@ -233,12 +193,11 @@ int8_t BME280driver::softReset()
 		{
 			// As per BME280 data sheet - Table 1, startup time is 2 ms.
 			_delay_us(BME280_RESET_NVM_COPY_WAIT); // default 2000
-			res = read(BME280_REG_STATUS, &status_reg);
-			printf("BME280_REG_STATUS: %d\n", res);
+			res = read(BME280_REG_STATUS, &(status.raw) );
 		} 
-		while ((res == BME280_OK) && (try_run--) && (status_reg & BME280_STATUS_IM_UPDATE));
+		while ((res == BME280_OK) && (try_run--) && status.im_update);
 
-		if (status_reg & BME280_STATUS_IM_UPDATE)
+		if (status.im_update)
 		{
 			res = BME280_ERR_NVM_NOT_COPIED;
 		}
@@ -246,29 +205,51 @@ int8_t BME280driver::softReset()
 	return res;	
 }
 
-int8_t BME280driver::getCalibData()
+int8_t BME280driver::readSettings()
 {
-	int8_t res;
-	uint8_t calib_data[BME280_TEMP_PRESS_CALIB_DATA_LEN] = { 0 };
-
-	// Read the calibration data from the sensor
-	res = read(BME280_REG_TEMP_PRESS_CALIB_DATA, calib_data, BME280_TEMP_PRESS_CALIB_DATA_LEN);
-
-	if (res == BME280_OK)
+	if(device_ok)
 	{
-		// Parse temperature and pressure calibration data and store it in device structure
-		parseTempPressCalibData(calib_data);
+		int8_t res;
+		uint8_t settings_data[BME280_SETTINGS_DATA_LEN] = { 0 };
 
-		// Read the humidity calibration data from the sensor
-		res = read(BME280_REG_HUMIDITY_CALIB_DATA, calib_data, BME280_HUMIDITY_CALIB_DATA_LEN);
+		res = read(BME280_REG_CTRL_HUM, settings_data, BME280_SETTINGS_DATA_LEN);
 		if (res == BME280_OK)
 		{
-			// Parse humidity calibration data and store it in device structure
-			parseHumidCalibData(calib_data);
+			settings.ctrl_hum.raw = settings_data[0];
+			settings.ctrl_meas.raw = settings_data[2];
+			settings.config.raw = settings_data[3];
 		}
+		return res;
 	}
+	return BME280_ERR_DEV_NOT_INIT;
+}
 
-	return res;
+int8_t BME280driver::readCalibData()
+{
+	if(device_ok)
+	{
+		int8_t res;
+		uint8_t calib_data[BME280_TEMP_PRESS_CALIB_DATA_LEN] = { 0 };
+
+		// Read the calibration data from the sensor
+		res = read(BME280_REG_TEMP_PRESS_CALIB_DATA, calib_data, BME280_TEMP_PRESS_CALIB_DATA_LEN);
+
+		if (res == BME280_OK)
+		{
+			// Parse temperature and pressure calibration data and store it in device structure
+			parseTempPressCalibData(calib_data);
+
+			// Read the humidity calibration data from the sensor
+			res = read(BME280_REG_HUMIDITY_CALIB_DATA, calib_data, BME280_HUMIDITY_CALIB_DATA_LEN);
+			if (res == BME280_OK)
+			{
+				// Parse humidity calibration data and store it in device structure
+				parseHumidCalibData(calib_data);
+			}
+		}
+		return res;
+	}
+	return BME280_ERR_DEV_NOT_INIT;
 }
 
 void BME280driver::parseTempPressCalibData(const uint8_t *reg_data)
@@ -304,4 +285,61 @@ void BME280driver::parseHumidCalibData(const uint8_t *reg_data)
 	dig_h5_lsb = (int16_t)(reg_data[4] >> 4);
 	calib_data.dig_h5 = dig_h5_msb | dig_h5_lsb;
 	calib_data.dig_h6 = (int8_t)reg_data[6];
+}
+
+int8_t BME280driver::putDeviceToSleep()
+{
+	if(device_ok)
+	{
+		int8_t res;
+
+		return res;
+	}
+	return BME280_ERR_DEV_NOT_INIT;
+}
+
+int8_t BME280driver::writePowerMode(const uint8_t mode)
+{
+	if(device_ok)
+	{
+		int8_t res;
+
+		return res;
+	}
+	return BME280_ERR_DEV_NOT_INIT;
+}
+
+int8_t BME280driver::getMode(uint8_t *mode)
+{
+	if(device_ok)
+	{
+		uint8_t mode_reg;
+		int8_t res = read(BME280_REG_CTRL_MEAS, &mode_reg);
+		*mode = mode_reg & BME280_PWR_CTRL_MODE_MASK;
+		return res;
+	}
+	return BME280_ERR_DEV_NOT_INIT;
+}
+
+int8_t BME280driver::setMode(const uint8_t mode)
+{
+	if(device_ok)
+	{
+		uint8_t mode_reg;
+		int8_t res = getMode(&mode_reg);
+
+		// If the sensor is not in sleep mode put the device to sleep mode
+		if ((res == BME280_OK) && (mode_reg != MODE_SLEEP))
+		{
+			res = putDeviceToSleep();
+		}
+
+		// Set the power mode
+		if (res == BME280_OK)
+		{
+			res = writePowerMode(mode);
+		}
+		return res;
+	}
+	return BME280_ERR_DEV_NOT_INIT;
 }

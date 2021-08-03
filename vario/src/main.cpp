@@ -8,18 +8,21 @@
 #include "hardware/bme280/bme280.h"
 #include "hardware/ssd1306/SSD1306.h"
 #include "hardware/toneAC/toneAC.h"
+#include "hardware/battery/battery.h"
 
 
 int main(void) {
     //PORTC = (1<<PC5)|(1<<PC4);
 
+    uart_init();
+    i2c_init();
+
     toneAC(2500);
     _delay_us(60000);
     noToneAC();
-
-    uart_init();
-    i2c_init();
     
+    printf("BAT_V: %d (?)\n", get_battery_voltage());
+
     BME280driver sensor;
     if(sensor.deviceOK()) printf("BME280: OK\n");
 
@@ -41,7 +44,6 @@ int main(void) {
     //     printf("Found device: 0x3C!\n");
     // }
 
-    puts("Hi!\n");
     // for (uint8_t adr = 0; adr < 128; adr++) {
     //     printf("Scan: 0x%x (%x)\n", adr, (adr<<1 | I2C_READ));
     //     if (0 == i2c_start(adr<<1)) {
@@ -51,6 +53,8 @@ int main(void) {
     //     _delay_ms(100);
     // }
 
+    puts("Hi!\n");
+    
     char input;
     int i = 0;
     while(1) {

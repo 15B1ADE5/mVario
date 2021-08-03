@@ -8,3 +8,4 @@ all: $(OBJECTS)
 	+$(MAKE) -C bme280
 	+$(MAKE) -C ssd1306
 	+$(MAKE) -C toneAC
+	+$(MAKE) -C battery

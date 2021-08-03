@@ -7,3 +7,4 @@ all: $(OBJECTS)
 	+$(MAKE) -C i2cmaster
 	+$(MAKE) -C bme280
 	+$(MAKE) -C ssd1306
+	+$(MAKE) -C toneAC

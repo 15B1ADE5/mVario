@@ -7,10 +7,15 @@
 #include "hardware/i2cmaster/i2cmaster.h"
 #include "hardware/bme280/bme280.h"
 #include "hardware/ssd1306/SSD1306.h"
+#include "hardware/toneAC/toneAC.h"
 
 
 int main(void) {
-    PORTC = (1<<PC5)|(1<<PC4);
+    //PORTC = (1<<PC5)|(1<<PC4);
+
+    toneAC(2500);
+    _delay_us(60000);
+    noToneAC();
 
     uart_init();
     i2c_init();

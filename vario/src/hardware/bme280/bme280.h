@@ -63,7 +63,7 @@ typedef union
 	{
 		uint8_t : 5;
 
-		// pressure oversampling
+		// humidity oversampling
 		// 000 = skipped
 		// 001 = x1
 		// 010 = x2
@@ -197,23 +197,6 @@ struct BME280Settings
 	BME280_reg_ctrl_hum ctrl_hum;
 	BME280_reg_ctrl_meas ctrl_meas;
 	BME280_reg_config config;
-
-	/*
-	// pressure oversampling
-	uint8_t osr_p;
-
-	// temperature oversampling
-	uint8_t osr_t;
-
-	// humidity oversampling
-	uint8_t osr_h;
-
-	// filter coefficient
-	uint8_t filter;
-
-	// standby time
-	uint8_t standby_time;
-	*/
 };
 
 struct BME280CalibData
@@ -287,9 +270,6 @@ public:
 private:
 	bool device_ok;
 	uint8_t dev_addr;
-
-	BME280Settings settings;
-	BME280CalibData calib_data;
 	
 	int8_t read(uint8_t reg_addr, uint8_t *data, uint32_t len);
 	int8_t write(uint8_t reg_addr, uint8_t *data, uint32_t len);
@@ -297,32 +277,28 @@ private:
 	int8_t read(uint8_t reg_addr, uint8_t *data);
 	int8_t write(uint8_t reg_addr, uint8_t data);
 
-	// int8_t getRegs(uint8_t reg_addr, uint8_t *reg_data, uint16_t len);
-	// int8_t setRegs(uint8_t *reg_addr, const uint8_t *reg_data, uint8_t len);
+	int8_t init();
 
-	int8_t softReset();
-	int8_t putDeviceToSleep();
-	int8_t writePowerMode(const uint8_t mode);
-
-	int8_t readSettings();
-
-	int8_t readCalibData();
 	void parseTempPressCalibData(const uint8_t *reg_data);
 	void parseHumidCalibData(const uint8_t *reg_data);
 
+protected:
+	BME280Settings settings;
+	BME280CalibData calib_data;
 
-	int8_t init();
+	int8_t reset();
+
+	int8_t readCalibData();
+
+	int8_t writeSettings(const bool ctrl_meas = true, const bool ctrl_hum = true, const bool config = true);
+	int8_t readSettings();
+
+	int8_t writeMode(const Mode mode);
+	int8_t readMode(Mode *mode);
+
 public:
 	BME280driver(uint8_t dev_addr = BME280_I2C_ADDR);
-
 	bool deviceOK() const { return device_ok; }
-	void reset();
-
-	int8_t getMode(uint8_t *mode);
-	int8_t setMode(const uint8_t mode);
-	
-	int8_t setSettings(uint8_t desired_settings);
-	int8_t getSettings(uint8_t desired_settings);
 };
 
 

@@ -20,7 +20,7 @@ usage: $(ELF_FILE)
 	$(AVRSIZE) $<
 
 $(ELF_FILE): build
-	$(CCPP) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CXX) $(LDFLAGS) $(OBJECTS) -o $@
 
 clean:
 	rm -fr $(BIN_DIR)

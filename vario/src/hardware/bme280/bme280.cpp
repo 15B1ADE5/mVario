@@ -1,8 +1,11 @@
 #include "bme280.h"
 
-#include <stdio.h>
 #include <util/delay.h>
 #include "../i2cmaster/i2cmaster.h"
+
+#ifdef DEBUG
+#include <stdio.h>
+#endif
 
 #define BME280_CONCAT_BYTES(msb, lsb)	 (((uint16_t)msb << 8) | (uint16_t)lsb)
 
@@ -23,7 +26,9 @@ int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data, uint32_t len)
 				{
 					if(i != (len - 1) ) data[i] = i2c_readAck();
 					else data[i] = i2c_readNak();
+#ifdef DEBUG
 					printf("read(0x%X, 0x%X)\n", reg_addr, data[i]);
+#endif
 				}
 				i2c_stop();
 				// Data read success
@@ -45,26 +50,32 @@ int8_t BME280driver::write(uint8_t reg_addr, uint8_t *data, uint32_t len)
 	// Start i2c write
 	if (i2c_start(dev_addr << 1 | I2C_WRITE) == I2C_OK)
 	{
-		// Set reg_addr
-		if (i2c_write(reg_addr) == I2C_OK)
+		for(uint32_t i = 0; i < len; i++) 
 		{
-			for(uint32_t i = 0; i < len; i++) 
+			// Set reg_addr
+			if (i2c_write(reg_addr) == I2C_OK)
 			{
 				// Write data
-				if (i2c_write(data[i]) == I2C_OK)
+				if (i2c_write(data[i]) != I2C_OK)
 				{
 					i2c_stop();
 					// Data write fail
 					return BME280_ERR_WRITE_FAIL;
 				}
+#ifdef DEBUG
+				printf("write(0x%X, 0x%X)\n", reg_addr, data[i]);
+#endif
 			}
-			i2c_stop();
-			// Data write success
-			return BME280_OK;
+			else
+			{
+				i2c_stop();
+				// reg_addr setting fail
+				return BME280_ERR_WRITE_FAIL;
+			}
 		}
 		i2c_stop();
-		// reg_addr setting fail
-		return BME280_ERR_WRITE_FAIL;
+		// Data write success
+		return BME280_OK;
 	}
 	// i2c start write fail
 	return BME280_ERR_CONN_FAIL;
@@ -85,6 +96,9 @@ int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data)
 				// Read data
 				*data = i2c_readNak();
 				i2c_stop();
+#ifdef DEBUG
+				printf("read(0x%X, 0x%X)\n", reg_addr, *data);
+#endif
 				// Data read success
 				return BME280_OK;
 			}
@@ -101,7 +115,6 @@ int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data)
 
 int8_t BME280driver::write(uint8_t reg_addr, uint8_t data)
 {
-	printf("write(0x%x, 0x%x)\n", reg_addr, data);
 	// Start i2c write
 	if (i2c_start(dev_addr << 1 | I2C_WRITE) == I2C_OK)
 	{
@@ -112,12 +125,15 @@ int8_t BME280driver::write(uint8_t reg_addr, uint8_t data)
 			if (i2c_write(data) == I2C_OK)
 			{
 				i2c_stop();
-				// Data write fail
-				return BME280_ERR_WRITE_FAIL;
+#ifdef DEBUG
+				printf("write(0x%X, 0x%X)\n", reg_addr, data);
+#endif
+				// Data write success
+				return BME280_OK;
 			}
 			i2c_stop();
-			// Data write success
-			return BME280_OK;
+			// Data write fail
+			return BME280_ERR_WRITE_FAIL;
 		}
 		i2c_stop();
 		// reg_addr setting fail
@@ -130,7 +146,7 @@ int8_t BME280driver::write(uint8_t reg_addr, uint8_t data)
 int8_t BME280driver::init()
 {
 	int8_t res;
-
+	
 	// chip id read try count
 	uint8_t try_count = 5;
 	uint8_t chip_id = 0;
@@ -140,32 +156,27 @@ int8_t BME280driver::init()
 		// Read the chip-id of bme280 sensor
 		res = read(BME280_REG_CHIP_ID, &chip_id);
 
-		printf("%d ID: 0x%x\n", res, chip_id);
-
 		// Check for chip id validity
 		if ( (res == BME280_OK) && (chip_id == BME280_ALLOWED_CHIP_ID) )
 		{
-			// Reset the sensor
-			res = softReset();
-
-			if (res == BME280_OK)
-			{
-				// Read the calibration data
-				res = readCalibData();
-			}
 			break;
 		}
-
 		// Wait for 1 ms
 		_delay_us(1000);
 		--try_count;
 	}
 
 	// Chip id check failed
-	if (!try_count)
-	{
-		res = BME280_ERR_DEV_NOT_FOUND;
-	}
+	if (!try_count) return BME280_ERR_DEV_NOT_FOUND;
+
+	// Reset the sensor
+	res = reset();
+
+	// Read the calibration data
+	if (res == BME280_OK) res = readCalibData();
+
+	// Read config
+	if (res == BME280_OK) res = readSettings();
 
 	return res;
 }
@@ -177,7 +188,7 @@ BME280driver::BME280driver(uint8_t dev_addr)
 	if (init() == BME280_OK) this->device_ok = true;
 }
 
-int8_t BME280driver::softReset()
+int8_t BME280driver::reset()
 {
 	int8_t res;
 	BME280_reg_status status { .raw = 0 };
@@ -186,7 +197,7 @@ int8_t BME280driver::softReset()
 	// Write the soft reset command in the sensor
 	res = write(BME280_REG_RESET, BME280_CMD_SOFT_RESET);
 
-	//if (res == BME280_OK) // writing RESET_CMD always returns error on ATmega328p 
+	if (res == BME280_OK) // writing RESET_CMD always returns error on ATmega328p 
 	{
 		// If NVM not copied yet, Wait for NVM to copy
 		do
@@ -197,59 +208,100 @@ int8_t BME280driver::softReset()
 		} 
 		while ((res == BME280_OK) && (try_run--) && status.im_update);
 
-		if (status.im_update)
-		{
-			res = BME280_ERR_NVM_NOT_COPIED;
-		}
+		if (status.im_update) return BME280_ERR_NVM_NOT_COPIED;
 	}
 	return res;	
 }
 
+
+int8_t BME280driver::writeMode(const Mode mode)
+{
+	Mode current_mode;
+	int8_t res = readMode(&current_mode);
+
+	if( (res == BME280_OK) && (current_mode != mode))
+	{
+		// Setting to sleep procedure as in BoschSensortec driver. Needed? 
+		if(mode == MODE_SLEEP) {
+			res = reset();
+			if(res == BME280_OK) return writeSettings();
+		}
+
+		BME280_reg_ctrl_meas ctrl_meas = settings.ctrl_meas;
+		ctrl_meas.mode = mode;
+		return write(BME280_REG_CTRL_MEAS, ctrl_meas.raw);
+	}
+	return BME280_OK;
+}
+
+int8_t BME280driver::readMode(Mode *mode)
+{
+	BME280_reg_ctrl_meas ctrl_meas;
+	int8_t res = read(BME280_REG_CTRL_MEAS, &(ctrl_meas.raw));
+	*mode = static_cast<Mode>(ctrl_meas.mode);
+	return res;
+}
+
 int8_t BME280driver::readSettings()
 {
-	if(device_ok)
+	int8_t res;
+	uint8_t settings_data[BME280_SETTINGS_DATA_LEN] = { 0 };
+	res = read(BME280_REG_CTRL_HUM, settings_data, BME280_SETTINGS_DATA_LEN);
+	if (res == BME280_OK)
 	{
-		int8_t res;
-		uint8_t settings_data[BME280_SETTINGS_DATA_LEN] = { 0 };
-
-		res = read(BME280_REG_CTRL_HUM, settings_data, BME280_SETTINGS_DATA_LEN);
-		if (res == BME280_OK)
-		{
-			settings.ctrl_hum.raw = settings_data[0];
-			settings.ctrl_meas.raw = settings_data[2];
-			settings.config.raw = settings_data[3];
-		}
-		return res;
+		settings.ctrl_hum.raw = settings_data[0];
+		settings.ctrl_meas.raw = settings_data[2];
+		settings.config.raw = settings_data[3];
 	}
-	return BME280_ERR_DEV_NOT_INIT;
+	return res;
+}
+
+int8_t BME280driver::writeSettings(const bool ctrl_meas, const bool ctrl_hum, const bool config)
+{
+	Mode current_mode;
+	int8_t res = readMode(&current_mode);
+	
+	// If device not in sleep mode put in sleep mode by reset
+	if( (res == BME280_OK) && (current_mode != MODE_SLEEP) ) res = reset();
+	
+	// Ensure sleep mode selected & write ctrl_meas
+	settings.ctrl_meas.mode = MODE_SLEEP;
+	if( (res == BME280_OK) && ctrl_meas)
+		res = write(BME280_REG_CTRL_MEAS, settings.ctrl_meas.raw);
+
+	// Write ctrl_hum
+	if( (res == BME280_OK) && ctrl_hum)
+		res = write(BME280_REG_CTRL_HUM, settings.ctrl_hum.raw);
+	
+	// Write config
+	if( (res == BME280_OK) && config)
+		res = write(BME280_REG_CONFIG, settings.config.raw);
+	
+	return res;
 }
 
 int8_t BME280driver::readCalibData()
 {
-	if(device_ok)
+	int8_t res;
+	uint8_t calib_data[BME280_TEMP_PRESS_CALIB_DATA_LEN] = { 0 };
+
+	// Read the calibration data from the sensor
+	res = read(BME280_REG_TEMP_PRESS_CALIB_DATA, calib_data, BME280_TEMP_PRESS_CALIB_DATA_LEN);
+
+	if (res == BME280_OK)
 	{
-		int8_t res;
-		uint8_t calib_data[BME280_TEMP_PRESS_CALIB_DATA_LEN] = { 0 };
+		// Parse temperature and pressure calibration data and store it in device structure
+		parseTempPressCalibData(calib_data);
 
-		// Read the calibration data from the sensor
-		res = read(BME280_REG_TEMP_PRESS_CALIB_DATA, calib_data, BME280_TEMP_PRESS_CALIB_DATA_LEN);
-
+		// Read the humidity calibration data from the sensor
+		res = read(BME280_REG_HUMIDITY_CALIB_DATA, calib_data, BME280_HUMIDITY_CALIB_DATA_LEN);
 		if (res == BME280_OK)
 		{
-			// Parse temperature and pressure calibration data and store it in device structure
-			parseTempPressCalibData(calib_data);
-
-			// Read the humidity calibration data from the sensor
-			res = read(BME280_REG_HUMIDITY_CALIB_DATA, calib_data, BME280_HUMIDITY_CALIB_DATA_LEN);
-			if (res == BME280_OK)
-			{
-				// Parse humidity calibration data and store it in device structure
-				parseHumidCalibData(calib_data);
-			}
+			// Parse humidity calibration data and store it in device structure
+			parseHumidCalibData(calib_data);
 		}
-		return res;
 	}
-	return BME280_ERR_DEV_NOT_INIT;
+	return res;
 }
 
 void BME280driver::parseTempPressCalibData(const uint8_t *reg_data)
@@ -285,61 +337,4 @@ void BME280driver::parseHumidCalibData(const uint8_t *reg_data)
 	dig_h5_lsb = (int16_t)(reg_data[4] >> 4);
 	calib_data.dig_h5 = dig_h5_msb | dig_h5_lsb;
 	calib_data.dig_h6 = (int8_t)reg_data[6];
-}
-
-int8_t BME280driver::putDeviceToSleep()
-{
-	if(device_ok)
-	{
-		int8_t res;
-
-		return res;
-	}
-	return BME280_ERR_DEV_NOT_INIT;
-}
-
-int8_t BME280driver::writePowerMode(const uint8_t mode)
-{
-	if(device_ok)
-	{
-		int8_t res;
-
-		return res;
-	}
-	return BME280_ERR_DEV_NOT_INIT;
-}
-
-int8_t BME280driver::getMode(uint8_t *mode)
-{
-	if(device_ok)
-	{
-		uint8_t mode_reg;
-		int8_t res = read(BME280_REG_CTRL_MEAS, &mode_reg);
-		*mode = mode_reg & BME280_PWR_CTRL_MODE_MASK;
-		return res;
-	}
-	return BME280_ERR_DEV_NOT_INIT;
-}
-
-int8_t BME280driver::setMode(const uint8_t mode)
-{
-	if(device_ok)
-	{
-		uint8_t mode_reg;
-		int8_t res = getMode(&mode_reg);
-
-		// If the sensor is not in sleep mode put the device to sleep mode
-		if ((res == BME280_OK) && (mode_reg != MODE_SLEEP))
-		{
-			res = putDeviceToSleep();
-		}
-
-		// Set the power mode
-		if (res == BME280_OK)
-		{
-			res = writePowerMode(mode);
-		}
-		return res;
-	}
-	return BME280_ERR_DEV_NOT_INIT;
 }

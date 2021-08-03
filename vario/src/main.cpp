@@ -16,6 +16,7 @@ int main(void) {
     i2c_init();
     
     BME280driver sensor;
+    if(sensor.deviceOK()) printf("BME280: OK\n");
 
 
     uint8_t buffer[1024];

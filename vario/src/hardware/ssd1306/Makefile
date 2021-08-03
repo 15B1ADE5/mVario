@@ -11,7 +11,7 @@ OBJECTS    := $(addprefix $(OBJ_DIR)/,$(OBJECTS))
 all: $(OBJECTS)
 
 $(OBJ_DIR)/%.o: %.cpp $(DEPS) | $(OBJ_DIR)
-	$(CCPP) $(CPPFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)

@@ -11,7 +11,7 @@ all: $(OBJECTS)
 	+$(MAKE) -C hardware
 
 $(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
-	$(CCPP) $(CPPFLAGS) $< -o $@
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)

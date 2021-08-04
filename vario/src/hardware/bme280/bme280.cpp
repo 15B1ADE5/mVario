@@ -12,10 +12,10 @@
 
 void delay_ms(uint32_t ms)
 {
-   while (ms--)
-   {
-      _delay_ms(1);
-   }
+	while (ms--)
+	{
+		_delay_ms(1);
+	}
 }
 
 int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data, uint32_t len)
@@ -195,10 +195,10 @@ BME280driver::BME280driver(uint8_t dev_addr)
 	this->device_ok = false;
 	this->dev_addr = dev_addr;
 
-	settings.ctrl_hum.osrs_h = SAMPLING_X1;
-	settings.ctrl_meas.osrs_t = SAMPLING_X1;
-	settings.ctrl_meas.osrs_p = SAMPLING_X1;
-	settings.config.filter = FILTER_OFF;
+	// settings.ctrl_hum.osrs_h = SAMPLING_X1;
+	// settings.ctrl_meas.osrs_t = SAMPLING_X1;
+	// settings.ctrl_meas.osrs_p = SAMPLING_X1;
+	// settings.config.filter = FILTER_OFF;
 
 	if (init() == BME280_OK) this->device_ok = true;
 }
@@ -435,24 +435,143 @@ int8_t BME280driver::forcedACQ(uint32_t *pressure, uint32_t *temperature, uint32
 
 BME280::BME280(uint8_t dev_addr) : BME280driver(dev_addr)
 {
-	settings.ctrl_hum.osrs_h = SAMPLING_X8;
-	settings.ctrl_meas.osrs_t = SAMPLING_X4;
-	settings.ctrl_meas.osrs_p = SAMPLING_X8;
-	writeSettings(true, true, true);
+	// Initial temperature reading to calculate t_fine, t_fine_adjust
 
-	//settings.config.filter = 1;
+	setTemperatureSampling(BME280::SAMPLING_X1);
+	float temperature;
+	measure(nullptr, &temperature);
 }
 
-#include <stdio.h>
+void BME280::setFilter(const Filter filter)
+{
+	settings.config.filter = filter;
+	changed_settings.config = true;
+}
+
+BME280::Filter BME280::getFilter() const
+{
+	return static_cast<Filter>(settings.config.filter);
+}
+
+void BME280::setPressureSampling(const Sampling sampling)
+{
+	settings.ctrl_meas.osrs_p = sampling;
+	changed_settings.ctrl_meas = true;
+}
+
+BME280::Sampling BME280::getPressureSampling() const
+{
+	return static_cast<Sampling>(settings.ctrl_meas.osrs_p);
+}
+
+void BME280::setTemperatureSampling(const Sampling sampling)
+{
+	settings.ctrl_meas.osrs_t = sampling;
+	changed_settings.ctrl_meas = true;
+}
+
+BME280::Sampling BME280::getTemperatureSampling() const
+{
+	return static_cast<Sampling>(settings.ctrl_meas.osrs_t);
+}
+
+void BME280::setHumiditySampling(const Sampling sampling)
+{
+	settings.ctrl_hum.osrs_h = sampling;
+	changed_settings.ctrl_hum = true;
+}
+
+BME280::Sampling BME280::getHumiditySampling() const
+{
+	return static_cast<Sampling>(settings.ctrl_hum.osrs_h);
+}
+
+int8_t BME280::applySettings()
+{
+	int8_t res = writeSettings(changed_settings.ctrl_meas, changed_settings.ctrl_hum, changed_settings.config);
+	changed_settings.raw = 0;
+	return res;
+}
+
+float BME280::compensateTemperature(uint32_t &uncomp_temperature)
+{
+	int32_t var1, var2;
+
+	var1 = (int32_t)((uncomp_temperature / 8) - ((int32_t)calib_data.dig_t1 * 2));
+	var1 = (var1 * ((int32_t)calib_data.dig_t2)) / 2048;
+	var2 = (int32_t)((uncomp_temperature / 16) - ((int32_t)calib_data.dig_t1));
+	var2 = (((var2 * var2) / 4096) * ((int32_t)calib_data.dig_t3)) / 16384;
+
+	t_fine = var1 + var2 + t_fine_adjust;
+
+	return (float)((t_fine * 5 + 128) / 256) / 100;
+}
+
+float BME280::compensatePressure(uint32_t &uncomp_pressure)
+{
+	int64_t var1, var2, var3, var4;
+
+	var1 = ((int64_t)t_fine) - 128000;
+	var2 = var1 * var1 * (int64_t)calib_data.dig_p6;
+	var2 = var2 + ((var1 * (int64_t)calib_data.dig_p5) * 131072);
+	var2 = var2 + (((int64_t)calib_data.dig_p4) * 34359738368);
+	var1 = ((var1 * var1 * (int64_t)calib_data.dig_p3) / 256) +
+		((var1 * ((int64_t)calib_data.dig_p2) * 4096));
+	var3 = ((int64_t)1) * 140737488355328;
+	var1 = (var3 + var1) * ((int64_t)calib_data.dig_p1) / 8589934592;
+
+	if (var1 == 0) {
+		return NAN; // avoid exception caused by division by zero
+	}
+
+	var4 = 1048576 - uncomp_pressure;
+	var4 = (((var4 * 2147483648) - var2) * 3125) / var1;
+	var1 = (((int64_t)calib_data.dig_p9) * (var4 / 8192) * (var4 / 8192)) /
+		33554432;
+	var2 = (((int64_t)calib_data.dig_p8) * var4) / 524288;
+	var4 = ((var4 + var1 + var2) / 256) + (((int64_t)calib_data.dig_p7) * 16);
+
+	return (float) (var4 / 256.0);
+}
+
+float BME280::compensateHumidity(uint32_t &uncomp_humidity)
+{
+	int32_t var1, var2, var3, var4, var5;
+
+	var1 = t_fine - ((int32_t)76800);
+	var2 = (int32_t)(uncomp_humidity * 16384);
+	var3 = (int32_t)(((int32_t)calib_data.dig_h4) * 1048576);
+	var4 = ((int32_t)calib_data.dig_h5) * var1;
+	var5 = (((var2 - var3) - var4) + (int32_t)16384) / 32768;
+	var2 = (var1 * ((int32_t)calib_data.dig_h6)) / 1024;
+	var3 = (var1 * ((int32_t)calib_data.dig_h3)) / 2048;
+	var4 = ((var2 * (var3 + (int32_t)32768)) / 1024) + (int32_t)2097152;
+	var2 = ((var4 * ((int32_t)calib_data.dig_h2)) + 8192) / 16384;
+	var3 = var5 * var2;
+	var4 = ((var3 / 32768) * (var3 / 32768)) / 128;
+	var5 = var3 - ((var4 * ((int32_t)calib_data.dig_h1)) / 16);
+	var5 = (var5 < 0 ? 0 : var5);
+	var5 = (var5 > 419430400 ? 419430400 : var5);
+
+	return (float)( (uint32_t)(var5 / 4096) ) / 1024.0;
+}
 
 int8_t BME280::measure(float *pressure, float *temperature, float *humidity)
 {
-	uint32_t _pressure, _temperature, _humidity;
-	int8_t res = forcedACQ(&_pressure, &_temperature, &_humidity);
+	uint32_t uncomp_pressure=0, uncomp_temperature=0, uncomp_humidity=0;
+	int8_t res = BME280_OK;
 
-	printf("p: %lu\n", _pressure);
-	printf("t: %lu\n", _temperature);
-	printf("h: %lu\n", _humidity);
+	if(changed_settings.raw) res = applySettings();
+	
+	res = forcedACQ(
+		(settings.ctrl_meas.osrs_p ? &uncomp_pressure : nullptr),
+		(settings.ctrl_meas.osrs_t ? &uncomp_temperature : nullptr),
+		(settings.ctrl_hum.osrs_h ? &uncomp_humidity : nullptr)
+	);
+
+	if( (temperature != nullptr) && (settings.ctrl_meas.osrs_t) ) *temperature = compensateTemperature(uncomp_temperature);
+	if( (pressure != nullptr) && (settings.ctrl_meas.osrs_p) ) *pressure = compensatePressure(uncomp_pressure);
+	if( (humidity != nullptr) && (settings.ctrl_hum.osrs_h) ) *humidity = compensateHumidity(uncomp_humidity);
 
 	return res;
 }

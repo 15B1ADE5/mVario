@@ -27,9 +27,21 @@ int main(void) {
     BME280 sensor;
     if(sensor.deviceOK()) printf("BME280: OK\n");
 
-    for(int i = 0; i < 24; i++) 
+    sensor.setPressureSampling(BME280::SAMPLING_X2);
+    sensor.setTemperatureSampling(BME280::SAMPLING_X1);
+    sensor.setHumiditySampling(BME280::SAMPLING_X1);
+    sensor.setFilter(BME280::FILTER_X2);
+    //printf("applySettings: %d (?)\n", sensor.applySettings());
+
+	float pressure, temperature, humidity;
+    
+    for(int i = 0; i < 8; i++) 
     {
-        sensor.measure();
+        sensor.measure(&pressure, &temperature, &humidity);
+        printf("p: %f\n", pressure);
+	    printf("t: %f\n", temperature);
+	    printf("h: %f\n", humidity);
+	    printf("---\n");
         _delay_ms(200);
     }
 

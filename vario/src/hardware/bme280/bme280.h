@@ -194,11 +194,10 @@ typedef union
 #define BME280_PRES_HUM_MEAS_OFFSET        575
 #define BME280_MEAS_SCALING_FACTOR         1000
 
-
 struct BME280Settings
 {
-	BME280_reg_ctrl_hum ctrl_hum {.raw = 0};
 	BME280_reg_ctrl_meas ctrl_meas {.raw = 0};
+	BME280_reg_ctrl_hum ctrl_hum {.raw = 0};
 	BME280_reg_config config {.raw = 0};
 };
 
@@ -309,10 +308,26 @@ public:
 	int8_t forcedACQ(uint32_t *pressure = nullptr, uint32_t *temperature = nullptr, uint32_t *humidity = nullptr);
 };
 
+
+typedef union
+{
+	struct
+	{
+		uint8_t ctrl_meas : 1;
+		uint8_t ctrl_hum : 1;
+		uint8_t config : 1;
+
+		uint8_t : 5;
+	} __attribute__((__packed__));
+	uint8_t raw;
+} BME280_changed_settings;
+
 class BME280 : public BME280driver
 {
-	int8_t changed_settings;
+	BME280_changed_settings changed_settings {.raw = 0};
 
+	int32_t t_fine;
+	int32_t t_fine_adjust = 0;
 public:
 	BME280(uint8_t dev_addr = BME280_I2C_ADDR);
 
@@ -327,6 +342,9 @@ public:
 	Sampling getHumiditySampling() const;
 	int8_t applySettings();
 
+	float compensateTemperature(uint32_t &uncomp_temperature);
+	float compensatePressure(uint32_t &uncomp_pressure);
+	float compensateHumidity(uint32_t &uncomp_humidity);
 
 	int8_t measure(float *pressure = nullptr, float *temperature = nullptr, float *humidity = nullptr);
 };

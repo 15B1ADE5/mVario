@@ -9,6 +9,7 @@
 #include "hardware/ssd1306/SSD1306.h"
 #include "hardware/toneAC/toneAC.h"
 #include "hardware/battery/battery.h"
+#include "hardware/buttons/buttons.h"
 
 
 int main(void) {
@@ -17,8 +18,10 @@ int main(void) {
     uart_init();
     i2c_init();
 
-    toneAC(2500);
-    _delay_us(50000);
+    toneAC(880);
+    _delay_us(100000);
+    toneAC(1760);
+    _delay_us(100000);
     noToneAC();
     
     printf("BAT_V: %d (?)\n", get_battery_voltage());
@@ -27,15 +30,15 @@ int main(void) {
     BME280 sensor;
     if(sensor.deviceOK()) printf("BME280: OK\n");
 
+	float pressure, temperature, humidity;
+
     sensor.setPressureSampling(BME280::SAMPLING_X2);
     sensor.setTemperatureSampling(BME280::SAMPLING_X1);
     sensor.setHumiditySampling(BME280::SAMPLING_X1);
     sensor.setFilter(BME280::FILTER_X2);
     //printf("applySettings: %d (?)\n", sensor.applySettings());
 
-	float pressure, temperature, humidity;
-    
-    for(int i = 0; i < 8; i++) 
+    for(int i = 0; i < 1; i++) 
     {
         sensor.measure(&pressure, &temperature, &humidity);
         printf("p: %f\n", pressure);
@@ -46,6 +49,22 @@ int main(void) {
 	    printf("---\n");
         _delay_ms(200);
     }
+
+    btn_init();
+
+	BTNstatus btn { .raw= 0};
+	for(;;)
+	{
+		btn = btn_read();
+		if(btn.raw)
+		{
+			if(btn.btn_a) printf("a, ");
+			if(btn.btn_b) printf("b, ");
+			if(btn.btn_c) printf("c, ");
+			printf("\n");
+		}
+		_delay_ms(20);
+	}
 
     uint8_t buffer[1024];
     for(int i = 0; i < 1024; i++) buffer[i] = 0x00;

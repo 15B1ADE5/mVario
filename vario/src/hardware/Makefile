@@ -9,3 +9,4 @@ all: $(OBJECTS)
 	+$(MAKE) -C ssd1306
 	+$(MAKE) -C toneAC
 	+$(MAKE) -C battery
+	+$(MAKE) -C buttons

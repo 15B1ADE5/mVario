@@ -41,6 +41,8 @@ int main(void) {
         printf("p: %f\n", pressure);
 	    printf("t: %f\n", temperature);
 	    printf("h: %f\n", humidity);
+        printf("alt_: %f\n", BME280calcAltitude(pressure));
+        printf("alt+: %f\n", BME280calcAltitude(pressure, temperature));
 	    printf("---\n");
         _delay_ms(200);
     }

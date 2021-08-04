@@ -1,6 +1,7 @@
 #include "bme280.h"
 
 #include <util/delay.h>
+#include <math.h> 
 #include "../i2cmaster/i2cmaster.h"
 
 
@@ -574,4 +575,12 @@ int8_t BME280::measure(float *pressure, float *temperature, float *humidity)
 	if( (humidity != nullptr) && (settings.ctrl_hum.osrs_h) ) *humidity = compensateHumidity(uncomp_humidity);
 
 	return res;
+}
+
+float BME280calcAltitude(float pressure) {
+  return 44330.0 * (1.0 - pow(pressure / BME280_ALT_SEA_LEVEL_PRESSURE, BME280_ALT_HYPSOMETRIC_F_POW));
+}
+
+float BME280calcAltitude(float pressure, float temperature) {
+  return BME280_ALT_MULT_CONST * (BME280_ALT_T_0_K + temperature) * (1.0 - pow(pressure / BME280_ALT_SEA_LEVEL_PRESSURE, BME280_ALT_HYPSOMETRIC_F_POW));
 }

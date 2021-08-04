@@ -3,11 +3,20 @@
 #include <util/delay.h>
 #include "../i2cmaster/i2cmaster.h"
 
+
 #ifdef DEBUG
 #include <stdio.h>
 #endif
 
 #define BME280_CONCAT_BYTES(msb, lsb)	 (((uint16_t)msb << 8) | (uint16_t)lsb)
+
+void delay_ms(uint32_t ms)
+{
+   while (ms--)
+   {
+      _delay_ms(1);
+   }
+}
 
 int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data, uint32_t len)
 {
@@ -185,6 +194,12 @@ BME280driver::BME280driver(uint8_t dev_addr)
 {
 	this->device_ok = false;
 	this->dev_addr = dev_addr;
+
+	settings.ctrl_hum.osrs_h = SAMPLING_X1;
+	settings.ctrl_meas.osrs_t = SAMPLING_X1;
+	settings.ctrl_meas.osrs_p = SAMPLING_X1;
+	settings.config.filter = FILTER_OFF;
+
 	if (init() == BME280_OK) this->device_ok = true;
 }
 
@@ -197,7 +212,7 @@ int8_t BME280driver::reset()
 	// Write the soft reset command in the sensor
 	res = write(BME280_REG_RESET, BME280_CMD_SOFT_RESET);
 
-	if (res == BME280_OK) // writing RESET_CMD always returns error on ATmega328p 
+	if (res == BME280_OK)
 	{
 		// If NVM not copied yet, Wait for NVM to copy
 		do
@@ -212,6 +227,21 @@ int8_t BME280driver::reset()
 	}
 	return res;	
 }
+
+#ifdef BME280_ACQ_DELAY_ENABLE
+void BME280driver::calcACQdelay()
+{
+	uint8_t osr_sett_to_act_osr[] = { 0, 1, 2, 4, 8, 16, 16, 16 };
+
+	acq_delay = (uint32_t)( 
+		(
+			BME280_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_t]) +
+			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_p]) +
+			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_hum.osrs_h])
+		) / BME280_MEAS_SCALING_FACTOR
+	);
+}
+#endif
 
 
 int8_t BME280driver::writeMode(const Mode mode)
@@ -277,6 +307,12 @@ int8_t BME280driver::writeSettings(const bool ctrl_meas, const bool ctrl_hum, co
 	if( (res == BME280_OK) && config)
 		res = write(BME280_REG_CONFIG, settings.config.raw);
 	
+#ifdef BME280_ACQ_DELAY_ENABLE
+	calcACQdelay();
+#ifdef DEBUG
+	printf("acq_delay = %lu\n", acq_delay);
+#endif
+#endif
 	return res;
 }
 
@@ -337,4 +373,86 @@ void BME280driver::parseHumidCalibData(const uint8_t *reg_data)
 	dig_h5_lsb = (int16_t)(reg_data[4] >> 4);
 	calib_data.dig_h5 = dig_h5_msb | dig_h5_lsb;
 	calib_data.dig_h6 = (int8_t)reg_data[6];
+}
+
+int8_t BME280driver::forcedACQ(uint32_t *pressure, uint32_t *temperature, uint32_t *humidity)
+{
+	int8_t res;
+	uint8_t reg_data[BME280_P_T_H_DATA_LEN] = { 0 };
+
+	// Start ACQ
+	res = writeMode(MODE_FORCED);
+
+	if (res == BME280_OK)
+	{
+		BME280_reg_status status;
+		uint32_t acq_retry = 0;
+
+#ifdef BME280_ACQ_DELAY_ENABLE
+		// Wait calculated time until ACQ ends
+		// May work faster if disabled
+		delay_ms(acq_delay);
+#endif
+
+		// Ensure ACQ is not running
+		read(BME280_REG_STATUS, &(status.raw));
+		while (status.measuring)
+		{
+#ifdef DEBUG
+			printf("acq_retry = %lu, BME280_reg_status: 0x%X\n", acq_retry, status.raw);
+#endif
+			if(acq_retry > BME280_ACQ_WAIT_RETRY) return BME280_ERR_ACQ_TIMEOUT;
+			acq_retry++;
+			_delay_us(BME280_ACQ_WAIT_US);
+			read(BME280_REG_STATUS, &(status.raw));
+		}
+	}
+	
+	// Read data
+	if (res == BME280_OK) res = read(BME280_REG_DATA, reg_data, BME280_P_T_H_DATA_LEN);
+
+	// Parse data
+	if (res == BME280_OK)
+	{
+		if(pressure != nullptr)
+		{
+			*pressure = ( (uint32_t)reg_data[0] << 12) + ( (uint32_t)reg_data[1] << 4) + ( (uint32_t)reg_data[2] >> 4);
+		}
+
+		if(temperature != nullptr)
+		{
+			*temperature = ( (uint32_t)reg_data[3] << 12) + ( (uint32_t)reg_data[4] << 4) + ( (uint32_t)reg_data[5] >> 4);
+		}
+
+		if(humidity != nullptr)
+		{
+			*humidity = ( (uint32_t)reg_data[6] << 8) + ( (uint32_t)reg_data[7]);
+		}
+	}
+	
+	return res;
+}
+
+BME280::BME280(uint8_t dev_addr) : BME280driver(dev_addr)
+{
+	settings.ctrl_hum.osrs_h = SAMPLING_X8;
+	settings.ctrl_meas.osrs_t = SAMPLING_X4;
+	settings.ctrl_meas.osrs_p = SAMPLING_X8;
+	writeSettings(true, true, true);
+
+	//settings.config.filter = 1;
+}
+
+#include <stdio.h>
+
+int8_t BME280::measure(float *pressure, float *temperature, float *humidity)
+{
+	uint32_t _pressure, _temperature, _humidity;
+	int8_t res = forcedACQ(&_pressure, &_temperature, &_humidity);
+
+	printf("p: %lu\n", _pressure);
+	printf("t: %lu\n", _temperature);
+	printf("h: %lu\n", _humidity);
+
+	return res;
 }

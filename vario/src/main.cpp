@@ -18,14 +18,20 @@ int main(void) {
     i2c_init();
 
     toneAC(2500);
-    _delay_us(60000);
+    _delay_us(50000);
     noToneAC();
     
     printf("BAT_V: %d (?)\n", get_battery_voltage());
 
-    BME280driver sensor;
+
+    BME280 sensor;
     if(sensor.deviceOK()) printf("BME280: OK\n");
 
+    for(int i = 0; i < 24; i++) 
+    {
+        sensor.measure();
+        _delay_ms(200);
+    }
 
     uint8_t buffer[1024];
     for(int i = 0; i < 1024; i++) buffer[i] = 0x00;

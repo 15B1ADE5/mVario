@@ -15,6 +15,8 @@
 #define BME280_I2C_ADDR                    0x76
 #define BME280_I2C_ADDR_SEC                0x77
 
+#define BME280_ACQ_DELAY_ENABLE
+
 //////////////////////////////////////////////////
 // BME280 Registers:
 //////////////////////////////////////////////////
@@ -50,19 +52,12 @@
 
 #define BME280_STANDBY_MASK                0xE0
 #define BME280_STANDBY_POS                 0x05
-/*
-#define BME280_MODE_SLEEP                  0x0
-#define BME280_MODE_FORCED                 0x1
-#define BME280_MODE_NORMAL                 0x3
-*/
 
 // BME280_REG_CTRL_HUM
 typedef union
 {
 	struct
 	{
-		uint8_t : 5;
-
 		// humidity oversampling
 		// 000 = skipped
 		// 001 = x1
@@ -72,6 +67,7 @@ typedef union
 		// 101 and above = x16
 		uint8_t osrs_h : 3;
 		
+		uint8_t : 5;
 	} __attribute__((__packed__));
 	uint8_t raw;
 } BME280_reg_ctrl_hum;
@@ -82,20 +78,19 @@ typedef union
 {
 	struct
 	{
-		uint8_t : 4;
+		// NVM data status
+		// 0 = NVM data copying is done
+		// 1 = NVM data are being copied to image registers
+		uint8_t im_update : 1;
+
+		uint8_t : 2;
 
 		// measure status
 		// 0 = results have been transferred to the data registers
 		// 1 = conversion is running
 		uint8_t measuring : 1;
 
-		uint8_t : 2;
-
-		// NVM data status
-		// 0 = NVM data copying is done
-		// 1 = NVM data are being copied to image registers
-		uint8_t im_update : 1;
-		
+		uint8_t : 4;
 	} __attribute__((__packed__));
 	uint8_t raw;
 } BME280_reg_status;
@@ -105,14 +100,11 @@ typedef union
 {
 	struct
 	{
-		// temperature oversampling
-		// 000 = skipped
-		// 001 = x1
-		// 010 = x2
-		// 011 = x4
-		// 100 = x8
-		// 101 and above = x16
-		uint8_t osrs_t : 3;
+		// device mode
+		// 00       = sleep
+		// 01 or 10 = forced
+		// 11       = normal
+		uint8_t mode : 2;
 
 		// pressure oversampling
 		// 000 = skipped
@@ -123,11 +115,14 @@ typedef union
 		// 101 and above = x16
 		uint8_t osrs_p : 3;
 
-		// device mode
-		// 00       = sleep
-		// 01 or 10 = forced
-		// 11       = normal
-		uint8_t mode : 2;
+		// temperature oversampling
+		// 000 = skipped
+		// 001 = x1
+		// 010 = x2
+		// 011 = x4
+		// 100 = x8
+		// 101 and above = x16
+		uint8_t osrs_t : 3;
 	} __attribute__((__packed__));
 	uint8_t raw;
 } BME280_reg_ctrl_meas;
@@ -137,6 +132,20 @@ typedef union
 {
 	struct
 	{
+		// Enables 3-wire SPI interface
+		// 1 = enable
+		uint8_t spi3w_en : 1;
+
+		uint8_t : 1;
+
+		// filter settings
+		// 000 = filter off
+		// 001 = 2x filter
+		// 010 = 4x filter
+		// 011 = 8x filter
+		// 100 and above = 16x filter
+		uint8_t filter : 3;
+
 		// standby time duration in normal mode
 		// 000 = 0.5 ms
 		// 001 = 62.5 ms
@@ -147,20 +156,6 @@ typedef union
 		// 110 = 10 ms
 		// 111 = 20 ms
 		uint8_t t_sb : 3;
-		
-		// filter settings
-		// 000 = filter off
-		// 001 = 2x filter
-		// 010 = 4x filter
-		// 011 = 8x filter
-		// 100 and above = 16x filter
-		uint8_t filter : 3;
-
-		uint8_t : 1;
-
-		// Enables 3-wire SPI interface
-		// 1 = enable
-		uint8_t spi3w_en : 1;
 	} __attribute__((__packed__));
 	uint8_t raw;
 } BME280_reg_config;
@@ -176,14 +171,17 @@ typedef union
 #define BME280_ERR_CONN_FAIL               -4
 #define BME280_ERR_WRITE_FAIL              -11
 #define BME280_ERR_NVM_NOT_COPIED          -12
-
+#define BME280_ERR_ACQ_TIMEOUT             -13
 
 
 //////////////////////////////////////////////////
-// BME280 Settings:
+// BME280 Constants:
 //////////////////////////////////////////////////
 #define BME280_RESET_NVM_COPY_WAIT_RETRY   5
 #define BME280_RESET_NVM_COPY_WAIT         2000
+
+#define BME280_ACQ_WAIT_RETRY              100
+#define BME280_ACQ_WAIT_US                 1000
 
 #define BME280_SETTINGS_DATA_LEN           4
 
@@ -191,12 +189,17 @@ typedef union
 #define BME280_HUMIDITY_CALIB_DATA_LEN     7
 #define BME280_P_T_H_DATA_LEN              8
 
+#define BME280_MEAS_OFFSET                 1250
+#define BME280_MEAS_DURATION               2300
+#define BME280_PRES_HUM_MEAS_OFFSET        575
+#define BME280_MEAS_SCALING_FACTOR         1000
+
 
 struct BME280Settings
 {
-	BME280_reg_ctrl_hum ctrl_hum;
-	BME280_reg_ctrl_meas ctrl_meas;
-	BME280_reg_config config;
+	BME280_reg_ctrl_hum ctrl_hum {.raw = 0};
+	BME280_reg_ctrl_meas ctrl_meas {.raw = 0};
+	BME280_reg_config config {.raw = 0};
 };
 
 struct BME280CalibData
@@ -270,6 +273,11 @@ public:
 private:
 	bool device_ok;
 	uint8_t dev_addr;
+
+#ifdef BME280_ACQ_DELAY_ENABLE
+	uint32_t acq_delay;
+	void calcACQdelay();
+#endif
 	
 	int8_t read(uint8_t reg_addr, uint8_t *data, uint32_t len);
 	int8_t write(uint8_t reg_addr, uint8_t *data, uint32_t len);
@@ -282,6 +290,9 @@ private:
 	void parseTempPressCalibData(const uint8_t *reg_data);
 	void parseHumidCalibData(const uint8_t *reg_data);
 
+	int8_t writeMode(const Mode mode);
+	int8_t readMode(Mode *mode);
+
 protected:
 	BME280Settings settings;
 	BME280CalibData calib_data;
@@ -289,17 +300,35 @@ protected:
 	int8_t reset();
 
 	int8_t readCalibData();
-
 	int8_t writeSettings(const bool ctrl_meas = true, const bool ctrl_hum = true, const bool config = true);
 	int8_t readSettings();
-
-	int8_t writeMode(const Mode mode);
-	int8_t readMode(Mode *mode);
 
 public:
 	BME280driver(uint8_t dev_addr = BME280_I2C_ADDR);
 	bool deviceOK() const { return device_ok; }
+	int8_t forcedACQ(uint32_t *pressure = nullptr, uint32_t *temperature = nullptr, uint32_t *humidity = nullptr);
 };
 
+class BME280 : public BME280driver
+{
+	int8_t changed_settings;
+
+public:
+	BME280(uint8_t dev_addr = BME280_I2C_ADDR);
+
+
+	void setFilter(const Filter filter);
+	Filter getFilter() const;
+	void setPressureSampling(const Sampling sampling);
+	Sampling getPressureSampling() const;
+	void setTemperatureSampling(const Sampling sampling);
+	Sampling getTemperatureSampling() const;
+	void setHumiditySampling(const Sampling sampling);
+	Sampling getHumiditySampling() const;
+	int8_t applySettings();
+
+
+	int8_t measure(float *pressure = nullptr, float *temperature = nullptr, float *humidity = nullptr);
+};
 
 #endif // BME280_H 

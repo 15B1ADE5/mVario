@@ -204,12 +204,12 @@ typedef union
 //////////////////////////////////////////////////
 #define BME280_OK                          0
 
-#define BME280_ERR_DEV_NOT_INIT            -1
-#define BME280_ERR_DEV_NOT_FOUND           -2
-#define BME280_ERR_CONN_FAIL               -4
-#define BME280_ERR_WRITE_FAIL              -11
-#define BME280_ERR_NVM_NOT_COPIED          -12
-#define BME280_ERR_ACQ_TIMEOUT             -13
+#define BME280_ERR_DEV_NOT_FOUND           -1
+#define BME280_ERR_DEV_NOT_INIT            -2
+#define BME280_ERR_CONN_FAIL               -3
+#define BME280_ERR_WRITE_FAIL              -4
+#define BME280_ERR_NVM_NOT_COPIED          -10
+#define BME280_ERR_ACQ_TIMEOUT             -11
 
 
 //////////////////////////////////////////////////

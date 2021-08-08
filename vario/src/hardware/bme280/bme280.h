@@ -237,6 +237,15 @@ struct BME280Settings
 	BME280_reg_ctrl_meas ctrl_meas {.raw = 0};
 	BME280_reg_ctrl_hum ctrl_hum {.raw = 0};
 	BME280_reg_config config {.raw = 0};
+
+	void operator =(const BME280Settings & settings)
+	{
+		ctrl_meas.osrs_p = settings.ctrl_meas.osrs_p;
+		ctrl_meas.osrs_t = settings.ctrl_meas.osrs_t;
+		ctrl_hum.osrs_h = settings.ctrl_hum.osrs_h;
+		config.filter = settings.config.filter;
+		config.t_sb = settings.config.t_sb;
+	}
 };
 
 struct BME280CalibData
@@ -378,6 +387,9 @@ public:
 	Sampling getTemperatureSampling() const;
 	void setHumiditySampling(const Sampling sampling);
 	Sampling getHumiditySampling() const;
+
+	void setSettings(const BME280Settings &settings);
+	BME280Settings getSettings() { return settings; }
 	int8_t applySettings();
 
 	float compensateTemperature(uint32_t &uncomp_temperature);

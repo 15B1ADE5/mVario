@@ -487,6 +487,14 @@ BME280::Sampling BME280::getHumiditySampling() const
 	return static_cast<Sampling>(settings.ctrl_hum.osrs_h);
 }
 
+void BME280::setSettings(const BME280Settings &settings)
+{
+	this->settings = settings;
+	changed_settings.ctrl_meas = 1;
+	changed_settings.ctrl_hum = 1;
+	changed_settings.config = 1;
+}
+
 int8_t BME280::applySettings()
 {
 	int8_t res = writeSettings(changed_settings.ctrl_meas, changed_settings.ctrl_hum, changed_settings.config);

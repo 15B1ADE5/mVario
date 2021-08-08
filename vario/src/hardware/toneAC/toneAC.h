@@ -90,6 +90,22 @@ SYNTAX:
   #define TONEAC_VOL_9     11
   #define TONEAC_VOL_10    2
 
-  void toneAC(unsigned long frequency = NOTONEAC, uint8_t volume = TONEAC_VOL_10);
+  void toneAC(const uint32_t frequency = NOTONEAC, const uint8_t volume = TONEAC_VOL_10);
+  void toneACopt(const uint32_t frequency);
   void noToneAC();
+
+  void pulseToneInit();
+  void pulseToneStart();
+  void pulseToneStop();
+  void pulseToneSet(const uint32_t &frequency, const uint16_t beep_len = 10, const uint16_t mute_len = 4);
+
+
+  struct PulseToneState {
+    uint16_t beep = 0;
+    uint16_t mute = 1;
+    uint16_t beep_len = 10;
+    uint16_t mute_len = 4;
+    uint32_t tone_frequency = 200;
+  };
+
 #endif

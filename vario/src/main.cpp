@@ -56,66 +56,79 @@ uint8_t pic4[8] = {
 };
 
 int main(void) {
-    //PORTC = (1<<PC5)|(1<<PC4);
-
     uart_init();
     i2c_init();
-
+    pulseToneInit();
     
     toneAC(880);
     _delay_us(100000);
-    toneAC(1760);
-    _delay_us(100000);
-    noToneAC();
-    
+    //toneAC(1760);
+    //_delay_us(100000);
+    //noToneAC();
+    pulseToneSet(1760, 6, 3125);
+    pulseToneStart();
 
     printf("BAT_V: %d (?)\n", get_battery_voltage());
 
+    /*
+    _delay_ms(2000);
+    _delay_ms(8000);
+    pulseToneStop();
+    */
 
     uint8_t buffer[1024];
 
     //uint8_t buffer2[1024];
 
     SSD1306driver disp;
+    if(disp.deviceOK()) printf("SSD1306: OK\n");
 
-    for(int gg = 0; gg < 10; gg++)
+    for(int gg = 0; gg < 1; gg++)
     {
     for(int i = 0; i < 1024; i++) buffer[i] = 0x00;//(uint8_t)0x100 - (uint8_t) (i % 0x100);
 
-    for(int l = 0; l < 2; l++)
-    {
-        for(int r = 0; r < 8; r++)
+        for(int l = 0; l < 2; l++)
         {
-            for(int p = 0; p < 8; p++)
+            for(int r = 0; r < 8; r++)
             {
-                buffer[l*256 + r*16 + p] = pic4[p];
-                buffer[128 + l*256 + 8 + r*16 + p] = pic3[p];
-                buffer[512 + l*256 + r*16 + p] = pic2[p];
-                buffer[512 + 128 + l*256 + 8 + r*16 + p] = pic1[p];
+                for(int p = 0; p < 8; p++)
+                {
+                    buffer[l*256 + r*16 + p] = pic4[p];
+                    buffer[128 + l*256 + 8 + r*16 + p] = pic3[p];
+                    buffer[512 + l*256 + r*16 + p] = pic2[p];
+                    buffer[512 + 128 + l*256 + 8 + r*16 + p] = pic1[p];
+                }
             }
         }
-    }
         disp.sendFramebuffer(buffer);
-        _delay_us(2000000);
+        _delay_ms(200);
 
-    for(int i = 0; i < 1024; i++) buffer[i] = 0x00;//(uint8_t)0x100 - (uint8_t) (i % 0x100);
+        for(int i = 0; i < 1024; i++) buffer[i] = 0x00;//(uint8_t)0x100 - (uint8_t) (i % 0x100);
 
-    for(int l = 0; l < 2; l++)
-    {
-        for(int r = 0; r < 8; r++)
+        for(int l = 0; l < 2; l++)
         {
-            for(int p = 0; p < 8; p++)
+            for(int r = 0; r < 8; r++)
             {
-                buffer[l*256 + 8 + r*16 + p] = pic1[p];
-                buffer[128 + l*256 + r*16 + p] = pic2[p];
-                buffer[512 + l*256 + 8 + r*16 + p] = pic3[p];
-                buffer[512 + 128 + l*256 + r*16 + p] = pic4[p];
+                for(int p = 0; p < 8; p++)
+                {
+                    buffer[l*256 + 8 + r*16 + p] = pic1[p];
+                    buffer[128 + l*256 + r*16 + p] = pic2[p];
+                    buffer[512 + l*256 + 8 + r*16 + p] = pic3[p];
+                    buffer[512 + 128 + l*256 + r*16 + p] = pic4[p];
+                }
             }
         }
-    }
         disp.sendFramebuffer(buffer);
-        _delay_us(2000000);
+        _delay_ms(200);
     }
+
+    disp.setVerticalHorizontalScroll();
+    disp.startScroll();
+    _delay_ms(2000);
+    //disp.cmd(SSD1306_CMD_DEACTIVATE_SCROLL);
+
+    disp.setHorizontalScroll();
+
 
 
     puts("Hi!\n");

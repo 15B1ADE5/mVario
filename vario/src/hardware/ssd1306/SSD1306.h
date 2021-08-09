@@ -3,14 +3,32 @@
 
 #include <stdint.h>
 
+//////////////////////////////////////////////////
+// 0. Defaults:
+//////////////////////////////////////////////////
+
 #define SSD1306_DEFAULT_ADDRESS                 0x3C
+
+#define SSD1306_DEFAULT_REFRESH_RATE            0xF0
+#define SSD1306_DEFAULT_VERTICAL_OFFSET         0x00
+#define SSD1306_DEFAULT_START_LINE              0x00
+#define SSD1306_DEFAULT_HORIZONTAL_SCAN         0 // left
+#define SSD1306_DEFAULT_VERTICAL_SCAN           0 // bottom
+#define SSD1306_DEFAULT_MODE                    0 // normal
+
+#define SSD1306_DEFAULT_MEMORY_MODE             HORIZONTAL
+
+#define SSD1306_DEFAULT_CONTRAST                0x80
+#define SSD1306_DEFAULT_PRECHARGE_PERIOD        0xF1
+#define SSD1306_DEFAULT_V_COM_DESELECT          0x20
+
+#define SSD1306_DEFAULT_MULTIPLEX_RATIO         0x3F
 
 //////////////////////////////////////////////////
 // 1. Fundamental Commands:
 //////////////////////////////////////////////////
 //
 #define SSD1306_CMD_SET_CONTRAST                0x81
-#define SSD1306_DEFAULT_CONTRAST                0xCF // 0xCF
 //
 #define SSD1306_CMD_ENTIRE_DISPLAY_OFF          0xA4
 #define SSD1306_CMD_ENTIRE_DISPLAY_ON           0xA5
@@ -25,10 +43,10 @@
 //////////////////////////////////////////////////
 // 2. Scrolling Commands:
 //////////////////////////////////////////////////
-
+//
 #define SSD1306_CMD_SET_CONT_HOR_SCROLL_R       0x26
 #define SSD1306_CMD_SET_CONT_HOR_SCROLL_L       0x27
-
+//
 #define SSD1306_CMD_SET_CONT_VERT_SCROLL_R      0x29
 #define SSD1306_CMD_SET_CONT_VERT_SCROLL_L      0x2A
 
@@ -84,21 +102,18 @@
 //////////////////////////////////////////////////
 //
 #define SSD1306_CMD_SET_START_LINE(line)        (0x40 | (0x3F & line) )
-#define SSD1306_DEFAULT_START_LINE              0x00
 //
 #define SSD1306_CMD_SET_SEGMENT_REMAP_LEFT      0xA0
 #define SSD1306_CMD_SET_SEGMENT_REMAP_RIGHT     0xA1
 //leave
 #define SSD1306_CMD_SET_MULTIPLEX_RATIO         0xA8
 #define SSD1306_MULTIPLEX_RATIO(ratio)          (0x3F & ratio)
-#define SSD1306_DEFAULT_MULTIPLEX_RATIO         0x3F
 //
 #define SSD1306_CMD_SET_COM_SCAN_FROM_0         0xC0
 #define SSD1306_CMD_SET_COM_SCAN_FROM_N         0xC8
 //
 #define SSD1306_CMD_SET_DISPLAY_OFFSET          0xD3
 #define SSD1306_DISPLAY_OFFSET(offset)          (0x3F & offset)
-#define SSD1306_DEFAULT_DISPLAY_OFFSET          0x00
 //leave
 #define SSD1306_CMD_SET_COM_PINS                0xDA
 #define SSD1306_COM_PINS_A_SEQUENTIAL           0x02
@@ -110,12 +125,12 @@
 //////////////////////////////////////////////////
 // 5. Timing & Driving Scheme Setting Commands:
 //////////////////////////////////////////////////
-
+//
 #define SSD1306_CMD_SET_DISPLAY_CLOCK_DIV       0xD5
-#define SSD1306_DEFAULT_DISPLAY_CLOCK_DIV       0x80
-
+//
 #define SSD1306_CMD_SET_PRECHARGE_PERIOD        0xD9
 
+//
 #define SSD1306_CMD_SET_V_COM_DESELECT          0xDB
 #define SSD1306_V_COM_DESELECT(level)           (0x70 & (level << 4) )
 #define SSD1306_V_COM_DESELECT_0_65_X           0x00
@@ -169,21 +184,29 @@ class SSD1306driver{
 	uint8_t dev_addr;
 
 	//uint8_t cmd(const uint8_t data);
-	uint8_t cmd(const uint8_t *data, const uint8_t data_len);
+	//uint8_t cmd(const uint8_t *data, const uint8_t data_len);
 
 	uint8_t init();
 public:
 	uint8_t cmd(const uint8_t data);
+	uint8_t cmd(const uint8_t *data, const uint8_t data_len);
+
 	SSD1306driver(uint8_t dev_addr = SSD1306_DEFAULT_ADDRESS);
 	bool deviceOK() const { return device_ok; }
 
+// Display power:
+	uint8_t sleep();
+	uint8_t wakeup();
+	uint8_t off();
+	uint8_t on();
+
 // Display Settings:
-	uint8_t setRefreshRate(const uint8_t rate); // 0x00:0xFF
-	uint8_t setVerticalOffset(const uint8_t offset); // 0x00:0x3F
-	uint8_t setStartLine(const uint8_t line); // 0x00:0x3F
-	uint8_t setHorizontalScan(const bool right); // 0=left, 1=right
-	uint8_t setVerticalScan(const bool bottom); // 0=top, 1=bottom
-	uint8_t setMode(const bool inverse); // 0=normal, 1=inverse
+	uint8_t setRefreshRate(const uint8_t rate = SSD1306_DEFAULT_REFRESH_RATE); // 0x00:0xFF
+	uint8_t setVerticalOffset(const uint8_t offset = SSD1306_DEFAULT_VERTICAL_OFFSET); // 0x00:0x3F
+	uint8_t setStartLine(const uint8_t line = SSD1306_DEFAULT_START_LINE); // 0x00:0x3F
+	uint8_t setHorizontalScan(const bool right = SSD1306_DEFAULT_HORIZONTAL_SCAN); // 0=left, 1=right
+	uint8_t setVerticalScan(const bool bottom = SSD1306_DEFAULT_VERTICAL_SCAN); // 0=top, 1=bottom
+	uint8_t setMode(const bool inverse = SSD1306_DEFAULT_MODE); // 0=normal, 1=inverse
 
 	enum MemoryMode 
 	{
@@ -191,20 +214,43 @@ public:
 		VERTICAL = SSD1306_MEM_ADDR_MODE_VERTICAL,
 		PAGE = SSD1306_MEM_ADDR_MODE_PAGE
 	};
-	uint8_t setMemoryMode(const MemoryMode mode);
+	uint8_t setMemoryMode(const MemoryMode mode = SSD1306_DEFAULT_MEMORY_MODE);
 
 // Display Brightness Settings:
-	uint8_t setContrast(const uint8_t contrast); // 0x00:0xFF
-	uint8_t setPreChargePeriod(const uint8_t period); // 0x00:0xFF
-	uint8_t setVCOMHdeselectLevel(const uint8_t level); // 0x00:0x07
+	uint8_t setContrast(const uint8_t contrast = SSD1306_DEFAULT_CONTRAST); // 0x00:0xFF
+	uint8_t setPreChargePeriod(const uint8_t period = SSD1306_DEFAULT_PRECHARGE_PERIOD); // 0x00:0xFF
+	uint8_t setVCOMHdeselectLevel(const uint8_t level = SSD1306_DEFAULT_V_COM_DESELECT); // 0x00:0x07
 
+// Scrolling:
+	enum ScrollInterval
+	{
+		FRAMES_2 = SSD1306_CONT_SCR_C_STEP_FRAMES_2,
+		FRAMES_3 = SSD1306_CONT_SCR_C_STEP_FRAMES_3,
+		FRAMES_4 = SSD1306_CONT_SCR_C_STEP_FRAMES_4,
+		FRAMES_5 = SSD1306_CONT_SCR_C_STEP_FRAMES_5,
+		FRAMES_25 = SSD1306_CONT_SCR_C_STEP_FRAMES_25,
+		FRAMES_64 = SSD1306_CONT_SCR_C_STEP_FRAMES_64,
+		FRAMES_128 = SSD1306_CONT_SCR_C_STEP_FRAMES_128,
+		FRAMES_256 = SSD1306_CONT_SCR_C_STEP_FRAMES_256
+	};
+	uint8_t setHorizontalScroll(
+		const uint8_t right = true,
+		const ScrollInterval interval = FRAMES_2,
+		const uint8_t start_page = 0,
+		const uint8_t end_page = 7
+	);
+	uint8_t setVerticalHorizontalScroll(
+		const uint8_t right = true,
+		const ScrollInterval interval = FRAMES_2,
+		const uint8_t start_page = 0,
+		const uint8_t end_page = 7,
+		const uint8_t vertical_scroll_offset = 1
+	);
 
+	uint8_t startScroll();
+	uint8_t stopScroll();
 
 	void sendFramebuffer(uint8_t *buffer);
-	void invert(uint8_t inverted);
-private:
-	void sendCommand(uint8_t command);
-	void sendData(uint8_t data);
 };
 
 /*

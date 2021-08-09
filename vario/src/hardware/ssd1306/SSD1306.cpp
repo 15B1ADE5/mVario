@@ -46,7 +46,7 @@ uint8_t SSD1306driver::cmd(const uint8_t *data, const uint8_t data_len)
 		// Set reg_addr
 		if (i2c_write(0x00) == I2C_OK)
 		{
-			for(uint32_t i = 0; i < data_len; i++) 
+			for(uint8_t i = 0; i < data_len; i++) 
 			{
 				// Write data
 				if (i2c_write(data[i]) != I2C_OK)
@@ -139,10 +139,14 @@ uint8_t SSD1306driver::init()
 	//cmd(SSD1306_CMD_SET_MEM_ADDR_MODE);
 	//cmd(SSD1306_MEM_ADDR_MODE_HORIZONTAL);
    
+
+	if(res == SSD1306_OK) res = clearBuffer();
+	//cmd(SSD1306_CMD_DISPLAY_ON);
+
 	
 	if(res == SSD1306_OK) res = wakeup();
 	//cmd(SSD1306_CMD_DISPLAY_ON);
-
+	
 	return res;
 }
 
@@ -187,11 +191,11 @@ uint8_t SSD1306driver::on()
 
 
 // Display Settings:
-uint8_t SSD1306driver::setRefreshRate(const uint8_t rate)
+uint8_t SSD1306driver::setRefreshRate(const uint8_t divide_ratio, const uint8_t frequency)
 {
 	const uint8_t cmd_data[] = {
-		SSD1306_CMD_SET_DISPLAY_CLOCK_DIV,
-		rate
+		SSD1306_CMD_SET_DISPLAY_CLOCK,
+		(uint8_t) SSD1306_DISPLAY_CLOCK(divide_ratio, frequency)
 	};
 	return cmd(cmd_data, 2);
 }
@@ -303,27 +307,71 @@ uint8_t SSD1306driver::stopScroll()
 	return cmd(SSD1306_CMD_DEACTIVATE_SCROLL);
 }
 
+uint8_t SSD1306driver::sendData(const uint8_t *data, const uint16_t data_len)
+{
+	// Start i2c write
+	if (i2c_start(dev_addr << 1 | I2C_WRITE) == I2C_OK)
+	{
+		// Set reg_addr
+		if (i2c_write(0x40) == I2C_OK)
+		{
+			for(uint16_t i = 0; i < data_len; i++) 
+			{
+				// Write data
+				if (i2c_write(data[i]) != I2C_OK)
+				{
+					i2c_stop();
+					// Data write fail
+					return SSD1306_ERR_WRITE_FAIL;
+				}
+#ifdef DEBUG
+				printf("data(0x%X)\n", data[i]);
+#endif
+			}
+		}
+		else
+		{
+			i2c_stop();
+			// reg_addr setting fail
+			return SSD1306_ERR_WRITE_FAIL;
+		}
+		i2c_stop();
+		// Data write success
+		return SSD1306_OK;
+	}
+	// i2c start write fail
+	return SSD1306_ERR_CONN_FAIL;
+}
 
-
-//
-void SSD1306driver::sendFramebuffer(uint8_t *buffer) {
-    cmd(0x21);
-    cmd(0x00);
-    cmd(0x7F);
-
-    cmd(0x22);
-    cmd(0x00);
-    cmd(0x07);
-
-    // We have to send the buffer as 16 bytes packets
-    // Our buffer is 1024 bytes long, 1024/16 = 64
-    // We have to send 64 packets
-    for (uint8_t packet = 0; packet < 64; packet++) {
-        i2c_start(dev_addr << 1 | I2C_WRITE);
-        i2c_write(0x40);
-        for (uint8_t packet_byte = 0; packet_byte < 16; ++packet_byte) {
-            i2c_write(buffer[packet*16+packet_byte]);
-        }
-        i2c_stop();
-    }
+uint8_t SSD1306driver::clearBuffer()
+{
+	// Start i2c write
+	if (i2c_start(dev_addr << 1 | I2C_WRITE) == I2C_OK)
+	{
+		// Set reg_addr
+		if (i2c_write(0x40) == I2C_OK)
+		{
+			for(uint16_t i = 0; i < 1024; i++) 
+			{
+				// Write data
+				if (i2c_write(0x00) != I2C_OK)
+				{
+					i2c_stop();
+					// Data write fail
+					return SSD1306_ERR_WRITE_FAIL;
+				}
+			}
+		}
+		else
+		{
+			i2c_stop();
+			// reg_addr setting fail
+			return SSD1306_ERR_WRITE_FAIL;
+		}
+		i2c_stop();
+		// Data write success
+		return SSD1306_OK;
+	}
+	// i2c start write fail
+	return SSD1306_ERR_CONN_FAIL;
 }

@@ -55,18 +55,50 @@ uint8_t pic4[8] = {
     0b00111100,
 };
 
+
+#include "hardware/ssd1306/font0.h"
+
+
+SSD1306driver disp;
+
+void d_print(const char input)
+{
+    uint8_t buf[5] = {0};
+    uint16_t pos = ( (uint16_t)input - 32) * 4;
+    for(uint16_t vbit = 0; vbit < 4; vbit++) buf[vbit] = font0[pos + vbit];
+    
+    //printf("%c: %d: %d\n", input, (uint8_t)input, pos);
+
+    disp.sendData(buf, 5);
+}
+
+void d_print(char *input)
+{
+    disp.cmd(SSD1306_CMD_SET_COL_ADDR);
+    disp.cmd( SSD1306_COL_ADDR(0) );
+    disp.cmd( SSD1306_COL_ADDR(127) );
+
+    uint8_t c = 0;
+    while(input[c])
+    {
+        d_print(input[c]);
+        c++;
+    }
+}
+
+
 int main(void) {
     uart_init();
     i2c_init();
     pulseToneInit();
     
-    toneAC(880);
-    _delay_us(100000);
+    //toneAC(880);
+    //_delay_us(100000);
     //toneAC(1760);
     //_delay_us(100000);
     //noToneAC();
-    pulseToneSet(1760, 6, 3125);
-    pulseToneStart();
+    //pulseToneSet(1760, 6, 3125);
+    //pulseToneStart();
 
     printf("BAT_V: %d (?)\n", get_battery_voltage());
 
@@ -76,60 +108,40 @@ int main(void) {
     pulseToneStop();
     */
 
-    uint8_t buffer[1024];
 
-    //uint8_t buffer2[1024];
-
-    SSD1306driver disp;
     if(disp.deviceOK()) printf("SSD1306: OK\n");
 
-    for(int gg = 0; gg < 1; gg++)
+       BME280 sensor;
+    if(sensor.deviceOK()) printf("BME280: OK\n");
+
+	float pressure, temperature, humidity;
+
+    sensor.setPressureSampling(BME280::SAMPLING_X2);
+    sensor.setTemperatureSampling(BME280::SAMPLING_X1);
+    sensor.setFilter(BME280::FILTER_X16);
+
+    char buffer[32] = {0};
+    float acc;
+    float a_acc[16] = {0};
+    float alt, l_a = 0;
+    for(int i = 0; i < 1024; i++) 
     {
-    for(int i = 0; i < 1024; i++) buffer[i] = 0x00;//(uint8_t)0x100 - (uint8_t) (i % 0x100);
+        for(int m = 0; m < 16; m++) 
+        {   
+            sensor.measure(&pressure, &temperature, nullptr);
+            alt = BME280calcAltitude(pressure);
+            a_acc[m] = alt;
+            acc = 0;
+            for(int c = 0; c < 15; c++) acc += a_acc[c];
 
-        for(int l = 0; l < 2; l++)
-        {
-            for(int r = 0; r < 8; r++)
-            {
-                for(int p = 0; p < 8; p++)
-                {
-                    buffer[l*256 + r*16 + p] = pic4[p];
-                    buffer[128 + l*256 + 8 + r*16 + p] = pic3[p];
-                    buffer[512 + l*256 + r*16 + p] = pic2[p];
-                    buffer[512 + 128 + l*256 + 8 + r*16 + p] = pic1[p];
-                }
-            }
+            
+            _delay_ms(20);
         }
-        disp.sendFramebuffer(buffer);
-        _delay_ms(200);
-
-        for(int i = 0; i < 1024; i++) buffer[i] = 0x00;//(uint8_t)0x100 - (uint8_t) (i % 0x100);
-
-        for(int l = 0; l < 2; l++)
-        {
-            for(int r = 0; r < 8; r++)
-            {
-                for(int p = 0; p < 8; p++)
-                {
-                    buffer[l*256 + 8 + r*16 + p] = pic1[p];
-                    buffer[128 + l*256 + r*16 + p] = pic2[p];
-                    buffer[512 + l*256 + 8 + r*16 + p] = pic3[p];
-                    buffer[512 + 128 + l*256 + r*16 + p] = pic4[p];
-                }
-            }
-        }
-        disp.sendFramebuffer(buffer);
-        _delay_ms(200);
+        sprintf(buffer, "%f", acc / 16);
+        d_print(buffer);
     }
-
-    disp.setVerticalHorizontalScroll();
-    disp.startScroll();
-    _delay_ms(2000);
-    //disp.cmd(SSD1306_CMD_DEACTIVATE_SCROLL);
-
-    disp.setHorizontalScroll();
-
-
+    noToneAC();
+    
 
     puts("Hi!\n");
     
@@ -137,9 +149,14 @@ int main(void) {
     int i = 0;
     while(1) {
         input = getchar();
-        printf("%c", input);        
-        buffer[i] = input;
-        disp.sendFramebuffer(buffer);
+        d_print(input);
+        //printf("%c", input);        
+        //buffer[i] = input;
+        //disp.cmd(SSD1306_CMD_SET_COL_ADDR);
+        //disp.cmd( SSD1306_COL_ADDR(24) );
+        //disp.cmd( SSD1306_COL_ADDR(96) );
+        //printf("%d", disp.sendData( ( (uint8_t *)&input), 1));
+        
         i++;
     }
         

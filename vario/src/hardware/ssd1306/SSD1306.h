@@ -1,5 +1,5 @@
-#ifndef SSD1306
-#define SSD1306
+#ifndef SSD1306_H
+#define SSD1306_H
 
 #include <stdint.h>
 
@@ -181,7 +181,8 @@
 // Driver:
 //////////////////////////////////////////////////
 
-class SSD1306driver{
+class SSD1306driver
+{
 	bool device_ok;
 	uint8_t dev_addr;
 
@@ -189,10 +190,11 @@ class SSD1306driver{
 	//uint8_t cmd(const uint8_t *data, const uint8_t data_len);
 
 	uint8_t init();
-public:
+protected:
 	uint8_t cmd(const uint8_t data);
 	uint8_t cmd(const uint8_t *data, const uint8_t data_len);
 
+public:
 	SSD1306driver(uint8_t dev_addr = SSD1306_DEFAULT_ADDRESS);
 	bool deviceOK() const { return device_ok; }
 
@@ -255,11 +257,12 @@ public:
 	uint8_t startScroll();
 	uint8_t stopScroll();
 
+	uint8_t setColumnRange(const uint8_t start, const uint8_t end);
+	uint8_t setPagesRange(const uint8_t start, const uint8_t end);
 // Data
 	uint8_t clearBuffer();
 	uint8_t sendData(const uint8_t *data, const uint16_t data_len);
 };
 
 
-
-#endif // SSD1306 
+#endif // SSD1306_H

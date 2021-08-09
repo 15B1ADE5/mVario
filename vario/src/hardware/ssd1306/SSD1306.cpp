@@ -146,7 +146,7 @@ uint8_t SSD1306driver::init()
 	
 	if(res == SSD1306_OK) res = wakeup();
 	//cmd(SSD1306_CMD_DISPLAY_ON);
-	
+
 	return res;
 }
 
@@ -306,6 +306,28 @@ uint8_t SSD1306driver::stopScroll()
 {
 	return cmd(SSD1306_CMD_DEACTIVATE_SCROLL);
 }
+
+
+uint8_t SSD1306driver::setColumnRange(const uint8_t start, const uint8_t end)
+{
+	const uint8_t cmd_data[] = {
+		SSD1306_CMD_SET_COL_ADDR,
+		(uint8_t) SSD1306_COL_ADDR(start),
+		(uint8_t) SSD1306_COL_ADDR(end)
+	};
+	return cmd(cmd_data, 3);
+}
+
+uint8_t SSD1306driver::setPagesRange(const uint8_t start, const uint8_t end)
+{
+	const uint8_t cmd_data[] = {
+		SSD1306_CMD_SET_PAGE_ADDR,
+		(uint8_t) SSD1306_PAGE_ADDR(start),
+		(uint8_t) SSD1306_PAGE_ADDR(end)
+	};
+	return cmd(cmd_data, 3);
+}
+
 
 uint8_t SSD1306driver::sendData(const uint8_t *data, const uint16_t data_len)
 {

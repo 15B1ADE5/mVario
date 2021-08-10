@@ -97,7 +97,7 @@ SYNTAX:
   void pulseToneInit();
   void pulseToneStart();
   void pulseToneStop();
-  void pulseToneSet(const uint32_t &frequency, const uint16_t beep_len = 10, const uint16_t mute_len = 4);
+  void pulseToneSet(const uint32_t &frequency, const uint16_t beep_len = 10, const uint16_t mute_len = 4); // beep/mute time = beep/mute_len * 8.192 ms (for 8MHz CPU clock)
 
 
   struct PulseToneState {

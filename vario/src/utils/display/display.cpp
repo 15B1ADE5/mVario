@@ -1,7 +1,5 @@
 #include "display.h"
 
-#include <stdio.h>
-
 static uint8_t out_buffer[DISPLAY_TMP_BUFFER_SIZE] = {0};
 
 Display::Display(SSD1306driver *display)
@@ -81,7 +79,7 @@ int8_t Display::print(
 	// Set ranges
 	if(align_right) display->setColumnRange(DISPLAY_MAX_WIDTH - x_offset - width + 1, DISPLAY_MAX_WIDTH - x_offset);
 	else display->setColumnRange(x_offset, x_offset + width -1);
-	display->setPagesRange(v_offset, height + v_offset);
+	display->setPagesRange(v_offset, height + v_offset -1);
 
 	// Invert
 	if(invert) invert_buffer(buffer_byte);

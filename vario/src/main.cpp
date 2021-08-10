@@ -12,64 +12,74 @@
 #include "hardware/buttons/buttons.h"
 
 #include "utils/display/display.h"
+#include "vario/vario.h"
 
-
-
-SSD1306driver ssd1306;
-/*
-void d_print(const char input)
-{
-    uint8_t buf[5] = {0};
-    uint16_t pos = ( (uint16_t)input - 32) * 4;
-    for(uint16_t vbit = 0; vbit < 4; vbit++) buf[vbit] = font0[pos + vbit];
-    
-    //printf("%c: %d: %d\n", input, (uint8_t)input, pos);
-
-    disp.sendData(buf, 5);
-}
-
-void d_print(char *input)
-{
-    // disp.cmd(SSD1306_CMD_SET_COL_ADDR);
-    // disp.cmd( SSD1306_COL_ADDR(0) );
-    // disp.cmd( SSD1306_COL_ADDR(127) );
-
-    uint8_t c = 0;
-    while(input[c])
-    {
-        d_print(input[c]);
-        c++;
-    }
-}
-*/
 
 int main(void) {
     uart_init();
     i2c_init();
     pulseToneInit();
+    btn_init();
     
-    //toneAC(880);
-    //_delay_us(100000);
-    //toneAC(1760);
-    //_delay_us(100000);
-    //noToneAC();
-    //pulseToneSet(1760, 6, 3125);
-    //pulseToneStart();
+    toneAC(880);
+    _delay_us(100000);
+    toneAC(1760);
+    _delay_us(100000);
+    noToneAC();
+    pulseToneSet(1760, 6, 3125);
+    pulseToneStart();
 
     printf("BAT_V: %d (?)\n", get_battery_voltage());
 
-    /*
-    _delay_ms(2000);
-    _delay_ms(8000);
-    pulseToneStop();
-    */
 
 
+    SSD1306driver ssd1306;
     if(ssd1306.deviceOK()) printf("SSD1306: OK\n");
-
     Display disp(&ssd1306);
 
-    
+    BME280 sensor;
+    if(sensor.deviceOK()) printf("BME280: OK\n");
+    sensor.setPressureSampling(BME280::SAMPLING_X16);
+    sensor.setTemperatureSampling(BME280::SAMPLING_X1);
+    sensor.setHumiditySampling(BME280::SAMPLING_X1);
+    sensor.setFilter(BME280::FILTER_X16);
+
+
+    Vario vario(&sensor, &disp);
+    vario.draw();
+
+    bool show = true;
+    bool show2 = true;
+    BTNstatus btn;
+    for(;;)
+    {
+        vario.measure();
+        btn = btn_read();
+
+        if(btn.btn_a) 
+        {
+            ssd1306.wakeup();
+            show = true;
+        }
+        if(btn.btn_b) 
+        {
+            ssd1306.wakeup();
+            show2 = true;
+        }
+        if(btn.btn_c)
+        {
+            ssd1306.sleep();
+            show = false;
+            show2 = false;
+        }
+
+        if(show) vario.drawMain();
+        if(show2) vario.drawSec();
+
+        toneAC(880);
+        _delay_us(10000);
+        noToneAC();
+    }    
     /*
     int8_t ret = disp.print(
         "I'd Lo",//ve The Monkey_HEAD!",
@@ -83,12 +93,11 @@ int main(void) {
     printf("disp.print: %d\n", ret);
     */
     
-    BME280 sensor;
-    if(sensor.deviceOK()) printf("BME280: OK\n");
+    /*
+    
+    
 	float pressure, temperature, humidity;
-    sensor.setPressureSampling(BME280::SAMPLING_X16);
-    sensor.setTemperatureSampling(BME280::SAMPLING_X1);
-    sensor.setFilter(BME280::FILTER_X16);
+    
 
     char buffer[32] = {0};
     float acc;
@@ -124,7 +133,7 @@ int main(void) {
         );
         //d_print(buffer);
     }
-
+    */
     puts("Hi!\n");
 
 

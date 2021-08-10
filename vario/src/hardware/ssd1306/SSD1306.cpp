@@ -378,7 +378,7 @@ int8_t SSD1306driver::clearBuffer()
 			for(uint16_t i = 0; i < 1024; i++) 
 			{
 				// Write data
-				if (i2c_write(0xAA) != I2C_OK)
+				if (i2c_write(0x00) != I2C_OK)
 				{
 					i2c_stop();
 					// Data write fail

@@ -25,6 +25,9 @@
 
 #define SSD1306_DEFAULT_MULTIPLEX_RATIO         0x3F
 
+#define SSD1306_MAX_HEIGHT                      7    // pages
+#define SSD1306_MAX_WIDTH                       127  // pixels
+
 //////////////////////////////////////////////////
 // 1. Fundamental Commands:
 //////////////////////////////////////////////////
@@ -184,36 +187,36 @@
 class SSD1306driver
 {
 	bool device_ok;
-	uint8_t dev_addr;
+	int8_t dev_addr;
 
 	//uint8_t cmd(const uint8_t data);
 	//uint8_t cmd(const uint8_t *data, const uint8_t data_len);
 
-	uint8_t init();
+	int8_t init();
 protected:
-	uint8_t cmd(const uint8_t data);
-	uint8_t cmd(const uint8_t *data, const uint8_t data_len);
+	int8_t cmd(const uint8_t data);
+	int8_t cmd(const uint8_t *data, const uint8_t data_len);
 
 public:
 	SSD1306driver(uint8_t dev_addr = SSD1306_DEFAULT_ADDRESS);
 	bool deviceOK() const { return device_ok; }
 
 // Display power:
-	uint8_t sleep();
-	uint8_t wakeup();
-	uint8_t off();
-	uint8_t on();
+	int8_t sleep();
+	int8_t wakeup();
+	int8_t off();
+	int8_t on();
 
 // Display Settings:
-	uint8_t setRefreshRate(
+	int8_t setRefreshRate(
 		const uint8_t divide_ratio = SSD1306_DEFAULT_CLOCK_DIV_RATIO,
 		const uint8_t frequency = SSD1306_DEFAULT_CLOCK_FREQUENCY
 		); // divide_ratio=0x00:0x07, frequency=0x00:0x1F
-	uint8_t setVerticalOffset(const uint8_t offset = SSD1306_DEFAULT_VERTICAL_OFFSET); // 0x00:0x3F
-	uint8_t setStartLine(const uint8_t line = SSD1306_DEFAULT_START_LINE); // 0x00:0x3F
-	uint8_t setHorizontalScan(const bool right = SSD1306_DEFAULT_HORIZONTAL_SCAN); // 0=left, 1=right
-	uint8_t setVerticalScan(const bool bottom = SSD1306_DEFAULT_VERTICAL_SCAN); // 0=top, 1=bottom
-	uint8_t setMode(const bool inverse = SSD1306_DEFAULT_MODE); // 0=normal, 1=inverse
+	int8_t setVerticalOffset(const uint8_t offset = SSD1306_DEFAULT_VERTICAL_OFFSET); // 0x00:0x3F
+	int8_t setStartLine(const uint8_t line = SSD1306_DEFAULT_START_LINE); // 0x00:0x3F
+	int8_t setHorizontalScan(const bool right = SSD1306_DEFAULT_HORIZONTAL_SCAN); // 0=left, 1=right
+	int8_t setVerticalScan(const bool bottom = SSD1306_DEFAULT_VERTICAL_SCAN); // 0=top, 1=bottom
+	int8_t setMode(const bool inverse = SSD1306_DEFAULT_MODE); // 0=normal, 1=inverse
 
 	enum MemoryMode 
 	{
@@ -221,12 +224,12 @@ public:
 		VERTICAL = SSD1306_MEM_ADDR_MODE_VERTICAL,
 		PAGE = SSD1306_MEM_ADDR_MODE_PAGE
 	};
-	uint8_t setMemoryMode(const MemoryMode mode = SSD1306_DEFAULT_MEMORY_MODE);
+	int8_t setMemoryMode(const MemoryMode mode = SSD1306_DEFAULT_MEMORY_MODE);
 
 // Display Brightness Settings:
-	uint8_t setContrast(const uint8_t contrast = SSD1306_DEFAULT_CONTRAST); // 0x00:0xFF
-	uint8_t setPreChargePeriod(const uint8_t period = SSD1306_DEFAULT_PRECHARGE_PERIOD); // 0x00:0xFF
-	uint8_t setVCOMHdeselectLevel(const uint8_t level = SSD1306_DEFAULT_V_COM_DESELECT); // 0x00:0x07
+	int8_t setContrast(const uint8_t contrast = SSD1306_DEFAULT_CONTRAST); // 0x00:0xFF
+	int8_t setPreChargePeriod(const uint8_t period = SSD1306_DEFAULT_PRECHARGE_PERIOD); // 0x00:0xFF
+	int8_t setVCOMHdeselectLevel(const uint8_t level = SSD1306_DEFAULT_V_COM_DESELECT); // 0x00:0x07
 
 // Scrolling:
 	enum ScrollInterval
@@ -240,13 +243,13 @@ public:
 		FRAMES_128 = SSD1306_CONT_SCR_C_STEP_FRAMES_128,
 		FRAMES_256 = SSD1306_CONT_SCR_C_STEP_FRAMES_256
 	};
-	uint8_t setHorizontalScroll(
+	int8_t setHorizontalScroll(
 		const uint8_t right = true,
 		const ScrollInterval interval = FRAMES_2,
 		const uint8_t start_page = 0,
 		const uint8_t end_page = 7
 	);
-	uint8_t setVerticalHorizontalScroll(
+	int8_t setVerticalHorizontalScroll(
 		const uint8_t right = true,
 		const ScrollInterval interval = FRAMES_2,
 		const uint8_t start_page = 0,
@@ -254,14 +257,14 @@ public:
 		const uint8_t vertical_scroll_offset = 1
 	);
 
-	uint8_t startScroll();
-	uint8_t stopScroll();
+	int8_t startScroll();
+	int8_t stopScroll();
 
-	uint8_t setColumnRange(const uint8_t start, const uint8_t end);
-	uint8_t setPagesRange(const uint8_t start, const uint8_t end);
+	int8_t setColumnRange(const uint8_t start, const uint8_t end);
+	int8_t setPagesRange(const uint8_t start, const uint8_t end);
 // Data
-	uint8_t clearBuffer();
-	uint8_t sendData(const uint8_t *data, const uint16_t data_len);
+	int8_t clearBuffer();
+	int8_t sendData(const uint8_t *data, const uint16_t data_len);
 };
 
 

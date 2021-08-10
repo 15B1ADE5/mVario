@@ -1,19 +1,17 @@
-TOP_DIR    = ../
+TOP_DIR    = ../../../
 
 include $(TOP_DIR)/make_variables.mk
 
-SRCS       = main.cpp
+DEPS       = display.h
+SRCS       = display.cpp
 OBJECTS    = $(SRCS:.cpp=.o)
 OBJECTS    := $(addprefix $(OBJ_DIR)/,$(OBJECTS))
 
 
 all: $(OBJECTS)
-	+$(MAKE) -C hardware
-	+$(MAKE) -C utils
 
-$(OBJ_DIR)/%.o: %.cpp | $(OBJ_DIR)
+$(OBJ_DIR)/%.o: %.cpp $(DEPS) | $(OBJ_DIR)
 	$(CXX) $(CXXFLAGS) $< -o $@
 
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
-

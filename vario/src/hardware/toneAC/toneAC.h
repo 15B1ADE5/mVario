@@ -91,7 +91,7 @@ SYNTAX:
   #define TONEAC_VOL_10    2
 
   void toneAC(const uint32_t frequency = NOTONEAC, const uint8_t volume = TONEAC_VOL_10);
-  void toneACopt(const uint32_t frequency);
+  void toneACopt(const uint32_t &frequency);
   void noToneAC();
 
   void pulseToneInit();

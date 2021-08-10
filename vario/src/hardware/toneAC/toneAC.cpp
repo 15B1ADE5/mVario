@@ -86,7 +86,7 @@ ISR(TIMER0_OVF_vect) {
   }
   else if (pulse_state.mute) {
     if(pulse_state.mute == 1){
-      toneAC(pulse_state.tone_frequency);
+      toneACopt(pulse_state.tone_frequency);
       pulse_state.beep = pulse_state.beep_len;
     }
     pulse_state.mute--;

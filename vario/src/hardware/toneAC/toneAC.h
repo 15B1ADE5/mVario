@@ -90,8 +90,18 @@ SYNTAX:
   #define TONEAC_VOL_9     11
   #define TONEAC_VOL_10    2
 
+  #define toneAC_PLAY() {     \
+    TCCR1B |= _BV(WGM13);     \
+  }
+
+  #define toneAC_MUTE() {     \
+    TCCR1B &= ~(_BV(WGM13) ); \
+    PWMT1PORT &= ~(_BV(PWMT1AMASK) | _BV(PWMT1BMASK) ); \
+  }
+
+  void toneACinit();
   void toneAC(const uint32_t frequency = NOTONEAC, const uint8_t volume = TONEAC_VOL_10);
-  void toneACopt(const uint32_t &frequency);
+  void toneACsetFrequency(const uint32_t &frequency);
   void noToneAC();
 
   void pulseToneInit();

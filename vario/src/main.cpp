@@ -13,8 +13,8 @@
 #include "hardware/buttons/buttons.h"
 
 #include "utils/time_clock/time_clock.h"
-// #include "utils/display/display.h"
-// #include "vario/vario.h"
+#include "utils/display/display.h"
+#include "vario/vario.h"
 
 
 // Vario *vario_ptr;
@@ -60,9 +60,9 @@ int main(void) {
 	printf("BAT_V: %d (?)\n", get_battery_voltage());
 
 
-	// SSD1306driver ssd1306;
-	// if(ssd1306.deviceOK()) printf("SSD1306: OK\n");
-	// Display disp(&ssd1306);
+	SSD1306driver ssd1306;
+	if(ssd1306.deviceOK()) printf("SSD1306: OK\n");
+	Display disp(&ssd1306);
 
 	BME280 sensor;
 	if(sensor.deviceOK()) printf("BME280: OK\n");
@@ -70,24 +70,10 @@ int main(void) {
 	printf("Boot time: %lu ms\n", timer_get());
 
 	
-	/*
 	Vario vario(&sensor, &disp);
-	vario_ptr = &vario;
-
-	
-	
-	//pulseToneStart();
-
-
-	
-	for(int m = 0; m < 16; m++) vario.measure();
 
 	vario.draw();
 	vario.initTimerInterrupt();
-
-	//pulseToneStart();
-	//vario.interruptStart();
-	*/
 
 
 	// toneAC(1760);
@@ -108,13 +94,14 @@ int main(void) {
 	sensor.setStandbyDuration(BME280::STANDBY_MS_0_5);
 
 	_delay_us(100000);
-	sensor.startNormalACQ();
+	//sensor.startNormalACQ();
 	int8_t res = 0;
 	uint32_t acc = 0;
 	for(int i = 0; i < 32; i++)
 	{
+		vario.draw();
 		//printf ("---\n");
-		sensor.readData(&pressure, &temperature, &humidity);
+		//sensor.readData(&pressure, &temperature, &humidity);
 		//sensor.singleMeasure(&pressure, &temperature, &humidity);
 		acc += timer_get_reset();
 		//printf("%d: p: %f, t: %f, h: %f\n", res, pressure, temperature, humidity);

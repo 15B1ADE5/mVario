@@ -28,14 +28,24 @@ public:
 
 	int8_t print(
 		const char *string,
-		const Font &font = font_7x4,
+		const Font &font = font_1x4,
 		const bool align_right = false,
 		const uint8_t v_offset = 0,
 		const uint8_t x_offset = 0,
-		const uint8_t v_scale = 1,
-		const uint8_t h_scale = 1,
 		const uint8_t spacing = 1,
 		const bool invert = false
+	);
+
+	int8_t printScaled(
+		const char *string,
+		const Font &font = font_1x4,
+		const bool align_right = false,
+		const uint8_t v_offset = 0,
+		const uint8_t x_offset = 0,
+		const uint8_t spacing = 1,
+		const bool invert = false,
+		const uint8_t v_scale = 1,
+		const uint8_t h_scale = 1
 	);
 };
 

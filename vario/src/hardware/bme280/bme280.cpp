@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #include <math.h> 
 #include "../i2cmaster/i2cmaster.h"
+#include "../../utils/time_clock/time_clock.h"
 
 
 #ifdef DEBUG
@@ -11,13 +12,6 @@
 
 #define BME280_CONCAT_BYTES(msb, lsb)	 (((uint16_t)msb << 8) | (uint16_t)lsb)
 
-void delay_ms(uint32_t ms)
-{
-	while (ms--)
-	{
-		_delay_ms(1);
-	}
-}
 
 uint32_t BME280ACQdelay(const BME280Settings &settings)
 {

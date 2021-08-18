@@ -26,6 +26,8 @@ class Display
 public:
 	Display(SSD1306driver *display);
 
+	SSD1306driver *driver() { return display; }
+
 	int8_t print(
 		const char *string,
 		const Font &font = font_1x4,

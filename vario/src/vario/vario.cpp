@@ -150,7 +150,7 @@ void Vario::drawMain()
 	//speed
 	sprintf(buffer, "%4.1f", speed);
 	buffer[4] = 0;
-	display->printScaled(
+	display->print(
 		buffer,
 		font_2x7,
 		true,

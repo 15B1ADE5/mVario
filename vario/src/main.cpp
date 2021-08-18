@@ -15,6 +15,7 @@
 #include "utils/time_clock/time_clock.h"
 #include "utils/display/display.h"
 #include "vario/vario.h"
+#include "menu/menu.h"
 
 
 // Vario *vario_ptr;
@@ -69,7 +70,14 @@ int main(void) {
 
 	printf("Boot time: %lu ms\n", timer_get());
 
+	menu_init(&sensor, &disp);
+
 	
+	Dummy menu;
+	
+	menu.enter();
+
+	/*
 	Vario vario(&sensor, &disp);
 
 	vario.draw();
@@ -112,7 +120,7 @@ int main(void) {
 
 	// bool show = true;
 	// bool show2 = true;
-
+	*/
 	/*
 	BTNstatus btn;
 	for(;;)

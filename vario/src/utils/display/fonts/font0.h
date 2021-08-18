@@ -2,12 +2,13 @@
 #define FONT0_H
 
 #include <stdint.h>
+#include <avr/pgmspace.h>
 
 #define FONT0_Y_LEN      3
 #define FONT0_X_LEN      128
 #define FONT0_ARRAY_LEN  384
 
-const uint8_t font0[384] = {
+const PROGMEM uint8_t font0[384] = {
 	0x00, 0x00, 0x00, 0x00, 
 	0x00, 0xBE, 0x00, 0x00, 
 	0x06, 0x00, 0x06, 0x00, 

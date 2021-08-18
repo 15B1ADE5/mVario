@@ -7,8 +7,8 @@ arg_parser = argparse.ArgumentParser()
 arg_parser.add_argument('--input', '-i')
 arg_parser.add_argument('--output', '-o')
 arg_parser.add_argument('--threshold', '-t')
-arg_parser.add_argument('--group', '-g')
-arg_parser.add_argument('--skip', '-s')
+arg_parser.add_argument('--group', '-g', type=int)
+arg_parser.add_argument('--skip', '-s', type=int)
 
 args = arg_parser.parse_args()
 
@@ -78,7 +78,7 @@ out_file.write("#define " + image_name + "_Y_LEN      " + str(y_len) + "\n")
 out_file.write("#define " + image_name + "_X_LEN      " + str(x_len - skip_x_count) + "\n")
 out_file.write("#define " + image_name + "_ARRAY_LEN  " + str(len(out_list)) + "\n")
 out_file.write("\n")
-out_file.write("const uint8_t " + image_name.lower() + "[" + str(len(out_list)) + "] = {\n")
+out_file.write("const PROGMEM uint8_t _" + image_name.lower() + "[" + str(len(out_list)) + "] = {\n")
 
 array_lines = math.ceil(len(out_list) / group)
 

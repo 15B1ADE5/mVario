@@ -3,7 +3,8 @@
 
 #include <stdint.h>
 
-#include "font0.h"
+#include "font_1x4/font_1x4.h"
+#include "font_2x7/font_2x7.h"
 #include "font_numbers_4x14/font_numbers_4x14.h"
 
 struct Font
@@ -14,7 +15,7 @@ struct Font
 	uint8_t range_end = 127;
 	const uint8_t *font = nullptr;
 
-	uint8_t get_byte(const char &ascii_n, const uint8_t &x, const uint8_t &line) const
+	uint8_t get_byte(const char ascii_n, const uint8_t x, const uint8_t line) const
 	{
 		uint16_t pos = uint8_t(ascii_n);
 		if( (pos < range_start) || (pos > range_end) ) return (uint8_t)pos;
@@ -29,7 +30,15 @@ const Font font_1x4 {
 	.char_width = 4,
 	.range_start = 32,
 	.range_end = 127,
-	.font = font0
+	.font = _font_1x4
+};
+
+const Font font_2x7 {
+	.char_height = 2,
+	.char_width = 7,
+	.range_start = 32,
+	.range_end = 127,
+	.font = _font_2x7
 };
 
 const Font font_numbers_4x14 {

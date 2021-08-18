@@ -19,12 +19,17 @@ class Vario
 	float humidity = 0;
 
 	float altitude = 0;
-	float zero_altitude = 90;
+	float altitude_prev = 0;
+	float zero_altitude = 0;
 	float speed = 0;
 
 	uint16_t battery_level = 1000;
 
 public:
+	void initTimerInterrupt();
+	void interruptStart();
+	void interruptStop();
+
 	void measure();
 	void measureBattery();
 
@@ -38,6 +43,8 @@ public:
 	void drawBattery();
 
 	void draw();
+
+	void setZeroAltitude() { zero_altitude = altitude; }
 };
 
 

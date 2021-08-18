@@ -19,6 +19,32 @@ void delay_ms(uint32_t ms)
 	}
 }
 
+uint32_t BME280ACQdelay(const BME280Settings &settings)
+{
+	uint8_t osr_sett_to_act_osr[] = { 0, 1, 2, 4, 8, 16, 16, 16 };
+
+	return (uint32_t)( 
+		(
+			BME280_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_t]) +
+			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_p]) +
+			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_hum.osrs_h])
+		) / BME280_MEAS_SCALING_FACTOR
+	);
+}
+
+uint32_t BME280ACQmaxDelay(const BME280Settings &settings)
+{
+	uint8_t osr_sett_to_act_osr[] = { 0, 1, 2, 4, 8, 16, 16, 16 };
+
+	return (uint32_t)( 
+		(
+			BME280_MEAS_MAX_OFFSET + (BME280_MEAS_MAX_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_t]) +
+			BME280_PRES_HUM_MEAS_MAX_OFFSET + (BME280_MEAS_MAX_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_p]) +
+			BME280_PRES_HUM_MEAS_MAX_OFFSET + (BME280_MEAS_MAX_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_hum.osrs_h])
+		) / BME280_MEAS_SCALING_FACTOR
+	);
+}
+
 int8_t BME280driver::read(uint8_t reg_addr, uint8_t *data, uint32_t len)
 {
 	// Start i2c write
@@ -232,15 +258,7 @@ int8_t BME280driver::reset()
 #ifdef BME280_ACQ_DELAY_ENABLE
 void BME280driver::calcACQdelay()
 {
-	uint8_t osr_sett_to_act_osr[] = { 0, 1, 2, 4, 8, 16, 16, 16 };
-
-	acq_delay = (uint32_t)( 
-		(
-			BME280_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_t]) +
-			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_meas.osrs_p]) +
-			BME280_PRES_HUM_MEAS_OFFSET + (BME280_MEAS_DURATION * (uint32_t)osr_sett_to_act_osr[settings.ctrl_hum.osrs_h])
-		) / BME280_MEAS_SCALING_FACTOR
-	);
+	acq_delay = BME280ACQdelay(setting);
 }
 #endif
 
@@ -376,13 +394,10 @@ void BME280driver::parseHumidCalibData(const uint8_t *reg_data)
 	calib_data.dig_h6 = (int8_t)reg_data[6];
 }
 
-int8_t BME280driver::forcedACQ(uint32_t *pressure, uint32_t *temperature, uint32_t *humidity)
+int8_t BME280driver::runForcedACQ()
 {
-	int8_t res;
-	uint8_t reg_data[BME280_P_T_H_DATA_LEN] = { 0 };
-
 	// Start ACQ
-	res = writeMode(MODE_FORCED);
+	int8_t res = writeMode(MODE_FORCED);
 
 	if (res == BME280_OK)
 	{
@@ -396,8 +411,8 @@ int8_t BME280driver::forcedACQ(uint32_t *pressure, uint32_t *temperature, uint32
 #endif
 
 		// Ensure ACQ is not running
-		read(BME280_REG_STATUS, &(status.raw));
-		while (status.measuring)
+		res = read(BME280_REG_STATUS, &(status.raw));
+		while (status.measuring && (res == BME280_OK) )
 		{
 #ifdef DEBUG
 			printf("acq_retry = %lu, BME280_reg_status: 0x%X\n", acq_retry, status.raw);
@@ -405,12 +420,46 @@ int8_t BME280driver::forcedACQ(uint32_t *pressure, uint32_t *temperature, uint32
 			if(acq_retry > BME280_ACQ_WAIT_RETRY) return BME280_ERR_ACQ_TIMEOUT;
 			acq_retry++;
 			_delay_us(BME280_ACQ_WAIT_US);
-			read(BME280_REG_STATUS, &(status.raw));
+			res = read(BME280_REG_STATUS, &(status.raw));
 		}
 	}
+	return res;
+}
+
+int8_t BME280driver::readData(uint32_t *pressure, uint32_t *temperature, uint32_t *humidity)
+{
+	uint8_t reg_data[BME280_P_T_H_DATA_LEN] = { 0 };
+
+	uint8_t data_offset = 0, data_len = BME280_P_T_H_DATA_LEN;
 	
+	if( (pressure == nullptr) && (temperature != nullptr) && (humidity != nullptr) ) // T+H
+	{
+		data_offset = BME280_P_DATA_LEN;
+		data_len = BME280_P_T_H_DATA_LEN - BME280_P_DATA_LEN;
+	}
+	else if( (pressure != nullptr) && (temperature != nullptr) && (humidity == nullptr) ) // P+T
+	{
+		data_offset = 0;
+		data_len = BME280_P_T_H_DATA_LEN - BME280_H_DATA_LEN;
+	}
+	else if( (pressure == nullptr) && (temperature == nullptr) && (humidity != nullptr) ) // H
+	{
+		data_offset = BME280_P_DATA_LEN + BME280_T_DATA_LEN;
+		data_len = BME280_H_DATA_LEN;
+	}
+	else if( (pressure != nullptr) && (temperature == nullptr) && (humidity == nullptr) ) // P
+	{
+		data_offset = 0;
+		data_len = BME280_P_DATA_LEN;
+	}
+	else if( (pressure == nullptr) && (temperature != nullptr) && (humidity == nullptr) ) // T
+	{
+		data_offset = BME280_P_DATA_LEN;
+		data_len = BME280_T_DATA_LEN;
+	}
+
 	// Read data
-	if (res == BME280_OK) res = read(BME280_REG_DATA, reg_data, BME280_P_T_H_DATA_LEN);
+	int8_t res = read(BME280_REG_DATA, reg_data + data_offset, data_len);
 
 	// Parse data
 	if (res == BME280_OK)
@@ -440,7 +489,7 @@ BME280::BME280(uint8_t dev_addr) : BME280driver(dev_addr)
 
 	setTemperatureSampling(BME280::SAMPLING_X1);
 	float temperature;
-	measure(nullptr, &temperature);
+	singleMeasure(nullptr, &temperature);
 }
 
 void BME280::setFilter(const Filter filter)
@@ -486,6 +535,18 @@ BME280::Sampling BME280::getHumiditySampling() const
 {
 	return static_cast<Sampling>(settings.ctrl_hum.osrs_h);
 }
+
+void BME280::setStandbyDuration(const StandbyDuration delay)
+{
+	settings.config.t_sb = delay;
+	changed_settings.config = true;
+}
+
+BME280::StandbyDuration BME280::getStandbyDuration() const
+{
+	return static_cast<StandbyDuration>(settings.config.t_sb);
+}
+
 
 void BME280::setSettings(const BME280Settings &settings)
 {
@@ -565,14 +626,45 @@ float BME280::compensateHumidity(uint32_t &uncomp_humidity)
 	return (float)( (uint32_t)(var5 / 4096) ) / 1024.0;
 }
 
-int8_t BME280::measure(float *pressure, float *temperature, float *humidity)
+int8_t BME280::singleMeasure(float *pressure, float *temperature, float *humidity)
 {
 	uint32_t uncomp_pressure=0, uncomp_temperature=0, uncomp_humidity=0;
 	int8_t res = BME280_OK;
 
 	if(changed_settings.raw) res = applySettings();
 	
-	res = forcedACQ(
+	if(res == BME280_OK) res = runForcedACQ();
+
+	if(res == BME280_OK) res = BME280driver::readData(
+		(settings.ctrl_meas.osrs_p ? &uncomp_pressure : nullptr),
+		(settings.ctrl_meas.osrs_t ? &uncomp_temperature : nullptr),
+		(settings.ctrl_hum.osrs_h ? &uncomp_humidity : nullptr)
+	);
+
+	if( (temperature != nullptr) && (settings.ctrl_meas.osrs_t) ) *temperature = compensateTemperature(uncomp_temperature);
+	if( (pressure != nullptr) && (settings.ctrl_meas.osrs_p) ) *pressure = compensatePressure(uncomp_pressure);
+	if( (humidity != nullptr) && (settings.ctrl_hum.osrs_h) ) *humidity = compensateHumidity(uncomp_humidity);
+
+	return res;
+}
+
+int8_t BME280::startNormalACQ()
+{
+	int8_t res = BME280_OK;
+	if(changed_settings.raw) res = applySettings();
+	if(res == BME280_OK) res = writeMode(MODE_NORMAL);
+	return res;
+}
+
+int8_t BME280::stopNormalACQ()
+{
+	return writeMode(MODE_SLEEP);
+}
+
+int8_t BME280::readData(float *pressure, float *temperature, float *humidity)
+{
+	uint32_t uncomp_pressure=0, uncomp_temperature=0, uncomp_humidity=0;
+	int8_t res = BME280driver::readData(
 		(settings.ctrl_meas.osrs_p ? &uncomp_pressure : nullptr),
 		(settings.ctrl_meas.osrs_t ? &uncomp_temperature : nullptr),
 		(settings.ctrl_hum.osrs_h ? &uncomp_humidity : nullptr)

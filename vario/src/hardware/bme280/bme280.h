@@ -48,7 +48,7 @@
 #define BME280_I2C_ADDR                    0x76
 #define BME280_I2C_ADDR_SEC                0x77
 
-#define BME280_ACQ_DELAY_ENABLE
+//#define BME280_ACQ_DELAY_ENABLE
 
 #define BME280_ALT_SEA_LEVEL_PRESSURE      101325.0 // Pa
 #define BME280_ALT_HYPSOMETRIC_F_POW       0.190295
@@ -226,10 +226,17 @@ typedef union
 #define BME280_TEMP_PRESS_CALIB_DATA_LEN   26
 #define BME280_HUMIDITY_CALIB_DATA_LEN     7
 #define BME280_P_T_H_DATA_LEN              8
+#define BME280_P_DATA_LEN                  3
+#define BME280_T_DATA_LEN                  3
+#define BME280_H_DATA_LEN                  2
 
-#define BME280_MEAS_OFFSET                 1250
-#define BME280_MEAS_DURATION               2300
-#define BME280_PRES_HUM_MEAS_OFFSET        575
+#define BME280_MEAS_OFFSET                 1000
+#define BME280_MEAS_DURATION               2000
+#define BME280_PRES_HUM_MEAS_OFFSET        500
+#define BME280_MEAS_MAX_OFFSET             1250
+#define BME280_MEAS_MAX_DURATION           2300
+#define BME280_PRES_HUM_MEAS_MAX_OFFSET    575
+
 #define BME280_MEAS_SCALING_FACTOR         1000
 
 struct BME280Settings
@@ -277,6 +284,9 @@ struct BME280CalibData
 	int8_t dig_h6;
 
 };
+
+uint32_t BME280ACQdelay(const BME280Settings &settings);
+uint32_t BME280ACQmaxDelay(const BME280Settings &settings);
 
 class BME280driver
 {
@@ -336,14 +346,15 @@ private:
 	void parseTempPressCalibData(const uint8_t *reg_data);
 	void parseHumidCalibData(const uint8_t *reg_data);
 
-	int8_t writeMode(const Mode mode);
-	int8_t readMode(Mode *mode);
 
 protected:
 	BME280Settings settings;
 	BME280CalibData calib_data;
 
 	int8_t reset();
+
+	int8_t writeMode(const Mode mode);
+	int8_t readMode(Mode *mode);
 
 	int8_t readCalibData();
 	int8_t writeSettings(const bool ctrl_meas = true, const bool ctrl_hum = true, const bool config = true);
@@ -352,7 +363,10 @@ protected:
 public:
 	BME280driver(uint8_t dev_addr = BME280_I2C_ADDR);
 	bool deviceOK() const { return device_ok; }
-	int8_t forcedACQ(uint32_t *pressure = nullptr, uint32_t *temperature = nullptr, uint32_t *humidity = nullptr);
+
+	int8_t runForcedACQ();
+
+	int8_t readData(uint32_t *pressure = nullptr, uint32_t *temperature = nullptr, uint32_t *humidity = nullptr);
 };
 
 
@@ -387,6 +401,8 @@ public:
 	Sampling getTemperatureSampling() const;
 	void setHumiditySampling(const Sampling sampling);
 	Sampling getHumiditySampling() const;
+	void setStandbyDuration(const StandbyDuration delay);
+	StandbyDuration getStandbyDuration() const;
 
 	void setSettings(const BME280Settings &settings);
 	BME280Settings getSettings() { return settings; }
@@ -396,7 +412,13 @@ public:
 	float compensatePressure(uint32_t &uncomp_pressure);
 	float compensateHumidity(uint32_t &uncomp_humidity);
 
-	int8_t measure(float *pressure = nullptr, float *temperature = nullptr, float *humidity = nullptr);
+	// Forced ACQ
+	int8_t singleMeasure(float *pressure = nullptr, float *temperature = nullptr, float *humidity = nullptr);
+
+	// Normal ACQ
+	int8_t startNormalACQ();
+	int8_t stopNormalACQ();
+	int8_t readData(float *pressure, float *temperature, float *humidity);
 };
 
 float BME280calcAltitude(float pressure);

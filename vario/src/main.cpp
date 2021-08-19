@@ -65,7 +65,7 @@ int main(void) {
 	if(sensor.deviceOK()) printf("BME280: OK\n");
 
 	menu_init(&sensor, &disp);
-	//Vario vario(&sensor, &disp);
+	Vario vario(&sensor, &disp);
 
 	printf("Boot time: %lu ms\n", timer_get());
 
@@ -81,7 +81,7 @@ int main(void) {
 	MenuListItem item7(item7_text);
 
 	MenuListItem *item_arr[] = {
-		&item0,
+		&menu_entry_back,
 		&item1,
 		&item2,
 		&item3,
@@ -93,7 +93,7 @@ int main(void) {
 	// item_arr[0] = &item0;
 
 
-	MenuList item_list(item2_text, item_arr, 8);
+	MenuList item_list(item2_text, item_arr, 8, 0);
 	item_arr[2] = &item_list;
 
 	item_list.enter();
@@ -158,7 +158,7 @@ int main(void) {
 		//vario_ptr->drawSec();
 		//vario_ptr->drawMain();
 		_delay_us(200);
-		btn = btn_read();
+		btn = debounce_btn_read();
 
 		if(btn.btn_a) 
 		{

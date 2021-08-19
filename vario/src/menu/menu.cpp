@@ -4,6 +4,9 @@
 
 #include "../hardware/buttons/buttons.h"
 
+
+#include "icons/icon_back.h"
+
 static BME280 *sensor;
 static Display *display;
 
@@ -13,7 +16,9 @@ void menu_init(BME280 *_sensor, Display *_display)
 	display = _display;
 }
 
+const PROGMEM char menu_entry_back_text[] = {".."};
 
+MenuListItem menu_entry_back(menu_entry_back_text, _icon_back);
 
 #include <stdio.h>
 //////////////////////////////////////////////////
@@ -25,12 +30,14 @@ uint8_t MenuListItem::display_buffer[LIST_ITEM_DISP_BUFFER_LEN] = {0};
 
 MenuListItem::MenuListItem(const char * text, const uint8_t * icon)
 {
-	_icon = icon;
-	_text = text;
-	printf("C: %s\n", this->text() );
+	setup(text, icon);
 }
 
-const PROGMEM char ____list_text[] = {"MenuList"};
+void MenuListItem::setup(const char * text, const uint8_t * icon)
+{
+	_icon = icon;
+	_text = text;
+}
 
 char* MenuListItem::text()
 {
@@ -68,6 +75,23 @@ MenuList::MenuList(
 	const uint8_t * icon
 ) : MenuListItem(text, icon)
 {
+	this->list = list;
+	this->list_length = list_length;
+	this->exit_entry = exit_entry;
+	this->position = 0;
+	this->position_offset = 0;
+}
+
+void MenuList::setup(
+	const char * text,
+	MenuListItem ** list,
+	const uint8_t list_length,
+	const uint8_t exit_entry,
+	const uint8_t * icon
+)
+{
+	this->_text = text;
+	this->_icon = icon;
 	this->list = list;
 	this->list_length = list_length;
 	this->exit_entry = exit_entry;
@@ -144,24 +168,26 @@ void MenuList::draw()
 	uint8_t pos = 0;
 	for(uint8_t bar_line = 0; bar_line < 8; bar_line++)
 	{
-		pos = bar_line * 3;
+		pos = bar_line * 4;
 		if(bar_line == (bar / 2) )
 		{
-			display_buffer[pos] = 0xFF;
+			display_buffer[pos] = 0x00;
 			display_buffer[pos + 1] = 0xFF;
 			display_buffer[pos + 2] = 0xFF;
+			display_buffer[pos + 3] = 0xFF;
 		}
 		else
 		{
 			display_buffer[pos] = 0x00;
-			display_buffer[pos + 1] = 0xAA;
-			display_buffer[pos + 2] = 0x00;
+			display_buffer[pos + 1] = 0x00;
+			display_buffer[pos + 2] = 0xAA;
+			display_buffer[pos + 3] = 0x00;
 		}
 	}
 	
-	display->driver()->setColumnRange(125, 127);
+	display->driver()->setColumnRange(124, 127);
 	display->driver()->setPagesRange(0, 7);
-	display->driver()->sendData(display_buffer, 24);
+	display->driver()->sendData(display_buffer, LIST_ITEM_DISP_BUFFER_LEN);
 }
 
 void MenuList::up()
@@ -201,7 +227,7 @@ void MenuList::select()
 
 void MenuList::enter()
 {
-	display->driver()->clearBuffer();
+	//display->driver()->clearBuffer();
 	draw();
 	
 	BTNstatus btn;
@@ -211,13 +237,15 @@ void MenuList::enter()
 	uint8_t btn_ticks = 0;
 	while(true)
 	{
-		for(btn_ticks = 0; btn_ticks < 4; btn_ticks++)
+		for(btn_ticks = 0; btn_ticks < 3; btn_ticks++)
 		{
-			btn = btn_read();
+			debounce_btn_read();
 			_delay_ms(10);
 		}
 
-		if(btn.btn_a && btn.btn_c) 
+		btn = delay_btn_read();
+
+		if(btn.btn_ac) 
 		{
 			break;
 		}
@@ -228,40 +256,7 @@ void MenuList::enter()
 			select();
 		}
 
-		if(btn.btn_a) 
-		{
-			if(key_a_delay == 0)
-			{
-				up();
-				key_a_delay++;
-			}
-			else if(key_a_delay < 8)
-			{
-				key_a_delay++;
-			}
-			else
-			{
-				up();
-			}
-		}
-		else key_a_delay = 0;
-
-		if(btn.btn_c)
-		{
-			if(key_c_delay == 0)
-			{
-				down();
-				key_c_delay++;
-			}
-			else if(key_c_delay < 8)
-			{
-				key_c_delay++;
-			}
-			else
-			{
-				down();
-			}
-		}
-		else key_c_delay = 0;
+		if(btn.btn_a) up();
+		if(btn.btn_c) down();
 	}
 }

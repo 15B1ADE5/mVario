@@ -10,6 +10,8 @@
 
 #define BTN_DEBOUNCE_COUNT       4
 
+#define BTN_DELAY_COUNT          8
+
 typedef union
 {
 	struct
@@ -17,14 +19,18 @@ typedef union
 		uint8_t btn_a : 1;
 		uint8_t btn_b : 1;
 		uint8_t btn_c : 1;
+		uint8_t btn_ab : 1;
+		uint8_t btn_bc : 1;
+		uint8_t btn_ac : 1;
 		
-		uint8_t : 7;
+		uint8_t : 2;
 	} __attribute__((__packed__));
 	uint8_t raw;
 } BTNstatus;
 
 void btn_init();
 
-BTNstatus btn_read();
+BTNstatus delay_btn_read();
+BTNstatus debounce_btn_read();
 
 #endif

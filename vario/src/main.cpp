@@ -17,34 +17,30 @@
 #include "vario/vario.h"
 #include "menu/menu.h"
 
+#include <avr/pgmspace.h>
 
-// Vario *vario_ptr;
+class Base
+{
+	virtual void run() { printf("Base\n"); }
+public:
+	void doo() { run(); }
+};
 
-// uint16_t timer2_counter = 0;
-// ISR(TIMER2_OVF_vect) {
-// 	if( !(timer2_counter % 8) ) 
-// 	{
-// 		vario_ptr->measure();
-// 		// toneACopt(1760);
-// 		// _delay_us(5000);
-// 		// noToneAC();
-// 	}
-	
-// 	// if( !(timer2_counter % 16) ) 
-// 	// {
-// 	// 	vario_ptr->drawMain();
-// 	// }
+class Derr : public Base
+{
+	void run() override { printf("Derr\n"); }
+};
 
-// 	//vario_ptr->measure();
 
-// 	if(!timer2_counter)
-// 	{
-// 		//vario_ptr->drawSec();
-// 		//vario_ptr->drawMain();
-// 		timer2_counter = 128;
-// 	}
-// 	timer2_counter--;
-// }
+	const PROGMEM char item0_text[] = {"IItem  "};
+	const PROGMEM char item1_text[] = {"item_1"};
+	const PROGMEM char item2_text[] = {"list"};
+	const PROGMEM char item3_text[] = {"item_3ABC"};
+	const PROGMEM char item4_text[] = {"item_4"};
+	const PROGMEM char item5_text[] = {"item_5"};
+	const PROGMEM char item6_text[] = {"item_6"};
+	const PROGMEM char item7_text[] = {"item_7"};
+
 
 int main(void) {
 	
@@ -54,7 +50,7 @@ int main(void) {
 	uart_init();
 	i2c_init();
 	pulseToneInit();
-	//btn_init();
+	btn_init();
 
 
 	printf("F_CPU: %d MHz\n", F_CPU / 1000000);
@@ -68,20 +64,49 @@ int main(void) {
 	BME280 sensor;
 	if(sensor.deviceOK()) printf("BME280: OK\n");
 
+	menu_init(&sensor, &disp);
+	//Vario vario(&sensor, &disp);
+
 	printf("Boot time: %lu ms\n", timer_get());
 
-	menu_init(&sensor, &disp);
+
+	 
+	MenuListItem item0(item0_text);
+	MenuListItem item1(item1_text);
+	MenuListItem item2(item2_text);
+	MenuListItem item3(item3_text);
+	MenuListItem item4(item4_text);
+	MenuListItem item5(item5_text);
+	MenuListItem item6(item6_text);
+	MenuListItem item7(item7_text);
+
+	MenuListItem *item_arr[] = {
+		&item0,
+		&item1,
+		&item2,
+		&item3,
+		&item4,
+		&item5,
+		&item6,
+		&item7
+	};
+	// item_arr[0] = &item0;
+
+
+	MenuList item_list(item2_text, item_arr, 8);
+	item_arr[2] = &item_list;
+
+	item_list.enter();
+	ssd1306.clearBuffer();
+	
+	//Dummy menu;
+	
+	//menu.enter();
 
 	
-	Dummy menu;
-	
-	menu.enter();
 
-	/*
-	Vario vario(&sensor, &disp);
-
-	vario.draw();
-	vario.initTimerInterrupt();
+	//vario.draw();
+	//vario.initTimerInterrupt();
 
 
 	// toneAC(1760);
@@ -94,6 +119,7 @@ int main(void) {
 	// 	_delay_ms(100);
 	// }
 
+	/*
 	float pressure, temperature, humidity;
 	sensor.setPressureSampling(BME280::SAMPLING_X16);
 	sensor.setTemperatureSampling(BME280::SAMPLING_X16);
@@ -107,6 +133,7 @@ int main(void) {
 	uint32_t acc = 0;
 	for(int i = 0; i < 32; i++)
 	{
+		vario.measure();
 		vario.draw();
 		//printf ("---\n");
 		//sensor.readData(&pressure, &temperature, &humidity);
@@ -117,17 +144,19 @@ int main(void) {
 		//_delay_us(100000);
 	}
 	printf("time: %lu ms\n", acc/32);
-
-	// bool show = true;
-	// bool show2 = true;
 	*/
+
 	/*
+	bool show = true;
+	bool show2 = true;
+	
+	
 	BTNstatus btn;
 	for(;;)
 	{
 		vario.measure();
-		vario_ptr->drawSec();
-		vario_ptr->drawMain();
+		//vario_ptr->drawSec();
+		//vario_ptr->drawMain();
 		_delay_us(200);
 		btn = btn_read();
 
@@ -135,24 +164,24 @@ int main(void) {
 		{
 			vario.setZeroAltitude();
 		}
-		// if(btn.btn_b) 
-		// {
-		// 	ssd1306.wakeup();
-		// 	show2 = true;
-		// }
-		// if(btn.btn_c)
-		// {
-		// 	ssd1306.sleep();
-		// 	show = false;
-		// 	show2 = false;
-		// }
+		if(btn.btn_b) 
+		{
+			ssd1306.wakeup();
+			show2 = true;
+		}
+		if(btn.btn_c)
+		{
+			ssd1306.sleep();
+			show = false;
+			show2 = false;
+		}
 	}	
 
-	*/
-	/*
+	
+	
 	int8_t ret = disp.print(
 		"I'd Lo",//ve The Monkey_HEAD!",
-		font_7x4,
+		font_1x4,
 		false,
 		0,
 		0,
@@ -160,16 +189,16 @@ int main(void) {
 		4
 	);
 	printf("disp.print: %d\n", ret);
-	*/
 	
-	/*
+	
+	
 	
 	
 	
 	
 
 	char buffer[32] = {0};
-	float acc;
+	//float acc;
 	float a_acc[16] = {0};
 	float alt, l_a = 0;
 	for(int i = 0; i < 8024; i++) 
@@ -179,7 +208,7 @@ int main(void) {
 		noToneAC();
 		//for(int m = 0; m < 16; m++) 
 		//{   
-			sensor.measure(&pressure, &temperature, nullptr);
+			sensor.singleMeasure(&pressure, &temperature, nullptr);
 			alt = BME280calcAltitude(pressure);
 			//a_acc[m] = alt;
 			//acc = 0;
@@ -191,20 +220,16 @@ int main(void) {
 		sprintf(buffer, "%6.1f", alt);//acc / 16);
 		disp.print(
 			buffer,
-			font_7x4,
+			font_1x4,
 			true,
 			2,
-			1,
-			3,
-			3,
-			3,
-			false
+			1
 		);
 		//d_print(buffer);
 	}
-	*/
+	
 
-	/*
+	
 	puts("Hi!\n");
 
 

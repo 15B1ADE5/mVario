@@ -53,7 +53,7 @@ public:
 		const uint8_t * icon = _icon_default
 	);
 
-	void enter() override;
+	uint8_t enter() override;
 	T getValue() { return value; };
 };
 

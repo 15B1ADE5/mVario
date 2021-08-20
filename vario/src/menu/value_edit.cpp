@@ -61,7 +61,7 @@ void MenuValueEdit<T>::drawValue()
 		"% 014.6f",//"%*.*f",
 		//(int_digits + fraq_digits),
 		//fraq_digits,
-		value
+		(float)value
 	);
 	//buffer[4] = 0;
 	menu_display->print(
@@ -145,8 +145,12 @@ void MenuValueEdit<T>::up()
 	else for(int8_t p = 0; p > pos; p--) mod /= 10;
 	value += mod;
 
-	if(value > max) value = max;
+	printf("%d\n", value);
+
+	if(value < min) value = max;
+	else if(value > max) value = max;
 	drawValue();
+	value_change_action();
 }
 
 template <class T>
@@ -158,7 +162,9 @@ void MenuValueEdit<T>::down()
 	value -= mod;
 
 	if(value < min) value = min;
+	else if(value > max) value = min;
 	drawValue();
+	value_change_action();
 }
 
 template <class T>
@@ -188,7 +194,7 @@ void MenuValueEdit<T>::select()
 }
 
 template <class T>
-void MenuValueEdit<T>::enter()
+uint8_t MenuValueEdit<T>::enter()
 {
 	pos = int_digits;
 	draw();
@@ -224,6 +230,7 @@ void MenuValueEdit<T>::enter()
 		if(btn.btn_b) select();
 	}
 	exit_action();
+	return pos;
 }
 
 template class MenuValueEdit<uint8_t>;

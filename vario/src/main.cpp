@@ -14,11 +14,10 @@
 
 #include "utils/time_clock/time_clock.h"
 #include "utils/display/display.h"
+#include "utils/settings/settings.h"
 #include "vario/vario.h"
-#include "menu/menu.h"
-#include "menu/value_edit.h"
+#include "menu/menu_tree/menu_tree.h"
 
-#include <avr/pgmspace.h>
 
 class Base
 {
@@ -33,15 +32,15 @@ class Derr : public Base
 };
 
 
-	const PROGMEM char edit_text[] = {"Edit"};
-	const PROGMEM char item0_text[] = {"IItem  "};
-	const PROGMEM char item1_text[] = {"item_1"};
-	const PROGMEM char item2_text[] = {"list"};
-	const PROGMEM char item3_text[] = {"item_3ABC"};
-	const PROGMEM char item4_text[] = {"item_4"};
-	const PROGMEM char item5_text[] = {"item_5"};
-	const PROGMEM char item6_text[] = {"item_6"};
-	const PROGMEM char item7_text[] = {"item_7"};
+	// const PROGMEM char edit_text[] = {"Edit"};
+	// const PROGMEM char item0_text[] = {"IItem  "};
+	// const PROGMEM char item1_text[] = {"item_1"};
+	// const PROGMEM char item2_text[] = {"list"};
+	// const PROGMEM char item3_text[] = {"item_3ABC"};
+	// const PROGMEM char item4_text[] = {"item_4"};
+	// const PROGMEM char item5_text[] = {"item_5"};
+	// const PROGMEM char item6_text[] = {"item_6"};
+	// const PROGMEM char item7_text[] = {"item_7"};
 
 
 int main(void) {
@@ -58,6 +57,7 @@ int main(void) {
 	printf("F_CPU: %d MHz\n", F_CPU / 1000000);
 	printf("BAT_V: %d (?)\n", get_battery_voltage());
 
+	Settings settings;
 
 	SSD1306driver ssd1306;
 	if(ssd1306.deviceOK()) printf("SSD1306: OK\n");
@@ -66,53 +66,53 @@ int main(void) {
 	BME280 sensor;
 	if(sensor.deviceOK()) printf("BME280: OK\n");
 
-	menu_init(&sensor, &disp);
 	Vario vario(&sensor, &disp);
+	menu_init(&sensor, &disp, &settings);
+
+	MenuTree menu;
 
 	printf("Boot time: %lu ms\n", timer_get());
 
 
-	MenuValueEdit<float> edit(edit_text, -12.334, -1000, 1000, 6, 6);
+	// MenuValueEdit<float> edit(edit_text, -12.334, -1000, 1000, 6, 6);
 	
-	MenuListItem item0(item0_text);
-	MenuListItem item1(item1_text);
-	MenuListItem item2(item2_text);
-	MenuListItem item3(item3_text);
-	MenuListItem item4(item4_text);
-	MenuListItem item5(item5_text);
-	MenuListItem item6(item6_text);
-	MenuListItem item7(item7_text);
+	// MenuListItem item0(item0_text);
+	// MenuListItem item1(item1_text);
+	// MenuListItem item2(item2_text);
+	// MenuListItem item3(item3_text);
+	// MenuListItem item4(item4_text);
+	// MenuListItem item5(item5_text);
+	// MenuListItem item6(item6_text);
+	// MenuListItem item7(item7_text);
 
-	MenuListItem *item_arr[] = {
-		&edit,
-		&menu_entry_back,
-		&item0,
-		&item1,
-		&item2,
-		&item3,
-		&item4,
-		&item5,
-		&item6,
-		&item7
-	};
-	// item_arr[0] = &item0;
+	// MenuListItem *item_arr[] = {
+	// 	&edit,
+	// 	&menu_entry_back,
+	// 	&item0,
+	// 	&item1,
+	// 	&item2,
+	// 	&item3,
+	// 	&item4,
+	// 	&item5,
+	// 	&item6,
+	// 	&item7
+	// };
+	// // item_arr[0] = &item0;
 
 
-	MenuList item_list(item2_text, item_arr, 10, 1);
-	item_arr[2] = &item_list;
+	// MenuList item_list(item2_text, item_arr, 10, 1);
+	// item_arr[2] = &item_list;
 
-	item_list.enter();
+	// item_list.enter();
+
+	menu.enter();
+
 	ssd1306.clearBuffer();
 
-
-	//Dummy menu;
-	
-	//menu.enter();
-
 	
 
-	//vario.draw();
-	//vario.initTimerInterrupt();
+	vario.draw();
+	vario.initTimerInterrupt();
 
 
 	// toneAC(1760);
@@ -125,7 +125,7 @@ int main(void) {
 	// 	_delay_ms(100);
 	// }
 
-	/*
+	
 	float pressure, temperature, humidity;
 	sensor.setPressureSampling(BME280::SAMPLING_X16);
 	sensor.setTemperatureSampling(BME280::SAMPLING_X16);
@@ -150,9 +150,9 @@ int main(void) {
 		//_delay_us(100000);
 	}
 	printf("time: %lu ms\n", acc/32);
-	*/
+	
 
-	/*
+	
 	bool show = true;
 	bool show2 = true;
 	
@@ -246,6 +246,6 @@ int main(void) {
 		//printf("%c", input);		
 		//buffer[i] = input;
 	}
-	*/
+	
 	return 0;
 }

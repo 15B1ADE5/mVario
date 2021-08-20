@@ -6,6 +6,7 @@
 #include "font_1x4/font_1x4.h"
 #include "font_2x7/font_2x7.h"
 #include "font_numbers_4x14/font_numbers_4x14.h"
+#include "font_digits_4x14/font_digits_4x14.h"
 
 struct Font
 {
@@ -47,6 +48,14 @@ const Font font_numbers_4x14 {
 	.range_start = 32,
 	.range_end = 63,
 	.font = _font_numbers_4x14
+};
+
+const Font font_digits_4x14 {
+	.char_height = 4,
+	.char_width = 14,
+	.range_start = 45,
+	.range_end = 57,
+	.font = _font_digits_4x14
 };
 
 #endif // FONTS_H

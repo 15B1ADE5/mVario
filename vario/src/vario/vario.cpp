@@ -97,10 +97,14 @@ void Vario::drawMain()
 {
 	// altitude
 	sprintf(buffer, "%6.1f", altitude - zero_altitude);
+	for(uint8_t c = 0; c < 6; c++)
+	{
+		if(buffer[c] == ' ') buffer[c] == '/';
+	}
 	buffer[6] = 0;
 	display->print(
 		buffer,
-		font_numbers_4x14,
+		font_digits_4x14,
 		true,
 		2,
 		21,

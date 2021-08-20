@@ -1,7 +1,5 @@
 #include "vario.h"
 
-#include <avr/interrupt.h>
-#include <util/atomic.h>
 #include <stdio.h>
 
 Vario::Vario(BME280 *sensor, Display *display)
@@ -12,44 +10,7 @@ Vario::Vario(BME280 *sensor, Display *display)
 	measure();
 	altitude_prev = altitude;
 	measureBattery();
-	//interruptStop();
-	//initTimerInterrupt();
 }
-
-void Vario::initTimerInterrupt()
-{
-	TCCR2B |= (1 << CS22) | (1 << CS21) /*| (1 << CS20)*/; // prescaler 1024
-	TCNT0 = 0;
-	sei();
-}
-
-void Vario::interruptStart()
-{
-  TIMSK2 |= (1 << TOIE2);
-}
-
-void Vario::interruptStop()
-{
-  TIMSK2 &= ~(1 << TOIE2);
-}
-
-#define V_MIN  0.0
-#define V_MAX  1.0
-#define F_MIN  675.0
-#define F_MAX  1350.0
-#define B_MIN  12
-#define B_MAX  120
-
-
-
-#define BEEP_B    ( (F_MIN - F_MAX) / (V_MIN - V_MAX) )
-#define BEEP_A    ( F_MAX - BEEP_B * V_MAX)
-
-#define BBEEP_B   -40 //( (B_MIN - B_MAX) / (V_MIN - V_MAX) )
-#define BBEEP_A   140 //( B_MAX - BEEP_B * V_MAX)
-
-#define MBEEP_B   ( (B_MIN - B_MAX) / (V_MIN - V_MAX) )
-#define MBEEP_A   ( B_MAX - BEEP_B * V_MAX)
 
 
 
@@ -226,6 +187,7 @@ void Vario::drawBattery()
 
 void Vario::draw()
 {
+	printf("drw\n");
 	drawBase();
 	drawMain();
 	drawSec();

@@ -26,9 +26,6 @@ class Vario
 	uint16_t battery_level = 1000;
 
 public:
-	void initTimerInterrupt();
-	void interruptStart();
-	void interruptStop();
 
 	void measure();
 	void measureBattery();

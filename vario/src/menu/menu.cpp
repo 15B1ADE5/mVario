@@ -7,15 +7,18 @@
 
 #include "icons/icon_back.h"
 
-BME280 *sensor;
+BME280 *menu_sensor;
 Display *menu_display;
+Settings *menu_settings;
 
-void menu_init(BME280 *_sensor, Display *_display)
+void menu_init(BME280 *_sensor, Display *_display, Settings *_settings)
 {
-	sensor = _sensor;
+	menu_sensor = _sensor;
 	menu_display = _display;
+	menu_settings = _settings;
 }
 
+const PROGMEM char empty_text[] = {""};
 const PROGMEM char menu_entry_back_text[] = {".."};
 
 MenuListItem menu_entry_back(menu_entry_back_text, _icon_back);
@@ -163,6 +166,17 @@ void MenuList::draw()
 				(position_offset == item) ? true : false
 			);
 		}
+		else
+		{
+			menu_display->print(
+				"  ",
+				font_2x7,
+				false,
+				item * 2,
+				0,
+				110
+			);
+		}
 	}
 
 	uint8_t bar = (uint16_t)position * 16 / list_length;
@@ -226,14 +240,17 @@ void MenuList::select()
 	draw();
 }
 
-void MenuList::enter()
+uint8_t MenuList::enter()
 {
 	//menu_display->driver()->clearBuffer();
 	draw();
 	
 	BTNstatus btn;
 	uint8_t btn_ticks = 0;
-	while(true)
+
+	exit = false;
+
+	while(!exit)
 	{
 		for(btn_ticks = 0; btn_ticks < 3; btn_ticks++)
 		{
@@ -257,4 +274,5 @@ void MenuList::enter()
 		if(btn.btn_a) up();
 		if(btn.btn_c) down();
 	}
+	return position;
 }

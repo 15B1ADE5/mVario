@@ -5,17 +5,21 @@
 
 #include "../utils/display/display.h"
 #include "../hardware/bme280/bme280.h"
+#include "../utils/settings/settings.h"
 
 #include "icons/icon_default.h"
 #include "icons/icon_menu.h"
 
 
-void menu_init(BME280 *_sensor, Display *_display);
+void menu_init(BME280 *_sensor, Display *_display, Settings *_settings);
 
 #define LIST_ITEM_TEXT_BUFFER_LEN     15
 #define LIST_ITEM_TEXT_LEN            13
 #define LIST_ITEM_ICON_LEN            32
 #define LIST_ITEM_DISP_BUFFER_LEN     32
+
+
+extern const PROGMEM char empty_text[];
 
 class MenuListItem
 {
@@ -27,10 +31,10 @@ protected:
 	static uint8_t display_buffer[LIST_ITEM_DISP_BUFFER_LEN]; // = {0};
 
 public:
-	MenuListItem(const char * text, const uint8_t * icon = _icon_default);
+	MenuListItem(const char * text = empty_text, const uint8_t * icon = _icon_default);
 	void setup(const char * text, const uint8_t * icon = _icon_default);
 
-	virtual void enter() {}
+	virtual uint8_t enter() { return 0; }
 	
 	// text
 	virtual char* text();
@@ -47,6 +51,8 @@ protected:
 
 	MenuListItem ** list;
 
+	bool exit;
+
 	virtual MenuListItem * getMenuListItem(uint8_t pos);
 
 	void drawItem(MenuListItem * item, uint8_t pos = 0, bool selected = false);
@@ -59,7 +65,7 @@ protected:
 
 public:
 	MenuList(
-		const char * text,
+		const char * text = empty_text,
 		MenuListItem ** list = nullptr,
 		const uint8_t list_length = 0,
 		const uint8_t exit_entry = 255,
@@ -74,12 +80,14 @@ public:
 		const uint8_t * icon = _icon_menu
 	);
 
-	void enter() override;
+	uint8_t enter() override;
 };
 
 
-extern BME280 *sensor;
+extern BME280 *menu_sensor;
 extern Display *menu_display;
+extern Settings *menu_settings;
+
 extern MenuListItem menu_entry_back;
 
 #endif // MENU_H

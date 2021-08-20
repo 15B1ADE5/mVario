@@ -22,11 +22,16 @@ HEX_FILE   = $(BIN_DIR)/$(NAME).hex
 CC         = avr-gcc
 CXX        = avr-g++
 
-CFLAGS     = -c -std=gnu99 -Os -Wall -ffunction-sections -fdata-sections -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
-CXXFLAGS   = -c -Os -Wall -ffunction-sections -fdata-sections -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
+OPT_FLAGS  = -ffunction-sections -fdata-sections -fno-reorder-blocks  -fno-reorder-blocks-and-partition  -fno-reorder-functions -fno-toplevel-reorder -fshort-enums -mcall-prologues
+
+CFLAGS     = -c -std=gnu99 -Os -Wall $(OPT_FLAGS)
+CXXFLAGS   = -c -Os -Wall $(OPT_FLAGS)
 ASFLAGS    = -c -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)UL -x assembler-with-cpp -Wall
 
-LDFLAGS    = -Os -mmcu=$(DEVICE) -ffunction-sections -fdata-sections -Wl,--gc-sections,-u,vfprintf -lprintf_flt -lm
+CFLAGS     += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
+CXXFLAGS   += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
+
+LDFLAGS    = -Os -mmcu=$(DEVICE) $(OPT_FLAGS) -Wl,--relax,--gc-sections,-u,vfprintf -lprintf_flt -lm
 
 #AVRDUDE = avrdude -F -v -p $(DEVICE) -c $(PROGRAMMER) -P $(PORT) -b $(FLASH_BAUD) -D 
 AVRDUDE    = avrdude -v -p $(DEVICE) -c $(PROGRAMMER) -P $(PORT) -b $(FLASH_BAUD) -D

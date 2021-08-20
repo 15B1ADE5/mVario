@@ -145,8 +145,6 @@ void MenuValueEdit<T>::up()
 	else for(int8_t p = 0; p > pos; p--) mod /= 10;
 	value += mod;
 
-	printf("%d\n", value);
-
 	if(value < min) value = max;
 	else if(value > max) value = max;
 	drawValue();

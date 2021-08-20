@@ -1,6 +1,6 @@
 #include "display.h"
 
-static uint8_t out_buffer[DISPLAY_TMP_BUFFER_SIZE] = {0};
+#include "../buffer/buffer.h"
 
 Display::Display(SSD1306driver *display)
 {
@@ -22,7 +22,7 @@ void Display::invert_buffer(int16_t n)
 	n--;
 	while(n >=0)
 	{
-		out_buffer[n] = ~out_buffer[n];
+		data_buffer[n] = ~data_buffer[n];
 		n--;
 	}
 }
@@ -42,7 +42,7 @@ int8_t Display::print(
 	uint8_t height = font.char_height;
 	uint8_t width = font.char_width * string_size + spacing * (string_size - 1);
 
-	if( (uint16_t)height * (uint16_t)width > DISPLAY_TMP_BUFFER_SIZE) return DISPLAY_ERR_BUFFER_OVERFLOW;
+	if( (uint16_t)height * (uint16_t)width > BUFFER_SIZE) return DISPLAY_ERR_BUFFER_OVERFLOW;
 
 	// Render text
 	uint16_t buffer_byte = 0;
@@ -52,14 +52,14 @@ int8_t Display::print(
 		{
 			for(uint8_t x = 0; x < font.char_width; x++)
 			{
-				out_buffer[buffer_byte] = font.get_byte(string[c], x, l);
+				data_buffer[buffer_byte] = font.get_byte(string[c], x, l);
 				buffer_byte++;
 			}
 			if(c < (string_size - 1) )
 			{
 				for(uint8_t s = 0; s < spacing; s++)
 				{
-					out_buffer[buffer_byte] = 0x00;
+					data_buffer[buffer_byte] = 0x00;
 					buffer_byte++;
 				}
 			}
@@ -75,7 +75,7 @@ int8_t Display::print(
 	if(invert) invert_buffer(buffer_byte);
 
 	// Send buffer
-	display->sendData(out_buffer, buffer_byte);
+	display->sendData(data_buffer, buffer_byte);
 
 	return DISPLAY_OK;
 }
@@ -97,7 +97,7 @@ int8_t Display::printScaled(
 	uint8_t height = font.char_height * v_scale;
 	uint8_t width = font.char_width * h_scale * string_size + spacing * (string_size - 1);
 
-	if( (uint16_t)height * (uint16_t)width > DISPLAY_TMP_BUFFER_SIZE) return DISPLAY_ERR_BUFFER_OVERFLOW;
+	if( (uint16_t)height * (uint16_t)width > BUFFER_SIZE) return DISPLAY_ERR_BUFFER_OVERFLOW;
 
 	// Render text
 	uint16_t buffer_byte = 0;
@@ -111,7 +111,7 @@ int8_t Display::printScaled(
 				{
 					for(uint8_t sx = 0; sx < h_scale; sx++)
 					{
-						out_buffer[buffer_byte] = scale_bit(
+						data_buffer[buffer_byte] = scale_bit(
 							font.get_byte(string[c], x, l),
 							v_scale,
 							sl
@@ -123,7 +123,7 @@ int8_t Display::printScaled(
 				{
 					for(uint8_t s = 0; s < spacing; s++)
 					{
-						out_buffer[buffer_byte] = 0x00;
+						data_buffer[buffer_byte] = 0x00;
 						buffer_byte++;
 					}
 				}
@@ -140,7 +140,7 @@ int8_t Display::printScaled(
 	if(invert) invert_buffer(buffer_byte);
 
 	// Send buffer
-	display->sendData(out_buffer, buffer_byte);
+	display->sendData(data_buffer, buffer_byte);
 
 	return DISPLAY_OK;
 }

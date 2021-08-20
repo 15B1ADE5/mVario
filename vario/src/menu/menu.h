@@ -6,6 +6,7 @@
 #include "../utils/display/display.h"
 #include "../hardware/bme280/bme280.h"
 #include "../utils/settings/settings.h"
+#include "../utils/buffer/buffer.h"
 
 #include "icons/icon_default.h"
 #include "icons/icon_menu.h"
@@ -16,7 +17,6 @@ void menu_init(BME280 *_sensor, Display *_display, Settings *_settings);
 #define LIST_ITEM_TEXT_BUFFER_LEN     15
 #define LIST_ITEM_TEXT_LEN            13
 #define LIST_ITEM_ICON_LEN            32
-#define LIST_ITEM_DISP_BUFFER_LEN     32
 
 
 extern const PROGMEM char empty_text[];
@@ -28,7 +28,6 @@ protected:
 	const char * _text;
 
 	static char text_buffer[LIST_ITEM_TEXT_BUFFER_LEN]; // = {0};
-	static uint8_t display_buffer[LIST_ITEM_DISP_BUFFER_LEN]; // = {0};
 
 public:
 	MenuListItem(const char * text = empty_text, const uint8_t * icon = _icon_default);

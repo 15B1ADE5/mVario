@@ -126,8 +126,8 @@ BTNstatus delay_btn_read()
 	btn.btn_c = btn_delay(key_c_delay, btn.btn_c);
 
 	btn.btn_ab = btn_delay(key_ab_delay, btn.btn_a && btn.btn_b);
-	btn.btn_bc = btn_delay(key_ab_delay, btn.btn_b && btn.btn_c);
-	btn.btn_ac = btn_delay(key_ab_delay, btn.btn_a && btn.btn_c);
+	btn.btn_bc = btn_delay(key_bc_delay, btn.btn_b && btn.btn_c);
+	btn.btn_ac = btn_delay(key_ac_delay, btn.btn_a && btn.btn_c);
 #else
 	BTN_DELAY_2_ARGS(a, b);
 	BTN_DELAY_2_ARGS(b, c);

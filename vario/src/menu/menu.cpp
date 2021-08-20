@@ -29,7 +29,6 @@ MenuListItem menu_entry_back(menu_entry_back_text, _icon_back);
 //////////////////////////////////////////////////
 
 char MenuListItem::text_buffer[LIST_ITEM_TEXT_BUFFER_LEN] = {0};
-uint8_t MenuListItem::display_buffer[LIST_ITEM_DISP_BUFFER_LEN] = {0};
 
 MenuListItem::MenuListItem(const char * text, const uint8_t * icon)
 {
@@ -59,9 +58,9 @@ uint8_t * MenuListItem::icon()
 {
 	for(uint8_t byte = 0; byte < LIST_ITEM_ICON_LEN; byte++)
 	{
-		display_buffer[byte] = pgm_read_byte( &(_icon[byte]) );
+		data_buffer[byte] = pgm_read_byte( &(_icon[byte]) );
 	}
-	return display_buffer;
+	return data_buffer;
 }
 
 
@@ -119,18 +118,18 @@ void MenuList::drawItem(MenuListItem * item, uint8_t pos, bool selected)
 	}
 	menu_display->driver()->setPagesRange(pos, pos + 1);
 	menu_display->driver()->setColumnRange(0, 15);
-	menu_display->driver()->sendData(display_buffer, 32);
+	menu_display->driver()->sendData(data_buffer, 32);
 
 	if(selected)
 	{
-		for(uint8_t line = 0; line < 4; line++) display_buffer[line] = 0xFF;
+		for(uint8_t line = 0; line < 4; line++) data_buffer[line] = 0xFF;
 	}
 	else
 	{
-		for(uint8_t line = 0; line < 4; line++) display_buffer[line] = 0x00;
+		for(uint8_t line = 0; line < 4; line++) data_buffer[line] = 0x00;
 	}
 	menu_display->driver()->setColumnRange(16, 17);
-	menu_display->driver()->sendData(display_buffer, 4);
+	menu_display->driver()->sendData(data_buffer, 4);
 
 	char * entry_text = item->text();
 	uint8_t c = 0;
@@ -186,23 +185,23 @@ void MenuList::draw()
 		pos = bar_line * 4;
 		if(bar_line == (bar / 2) )
 		{
-			display_buffer[pos] = 0x00;
-			display_buffer[pos + 1] = 0xFF;
-			display_buffer[pos + 2] = 0xFF;
-			display_buffer[pos + 3] = 0xFF;
+			data_buffer[pos] = 0x00;
+			data_buffer[pos + 1] = 0xFF;
+			data_buffer[pos + 2] = 0xFF;
+			data_buffer[pos + 3] = 0xFF;
 		}
 		else
 		{
-			display_buffer[pos] = 0x00;
-			display_buffer[pos + 1] = 0x00;
-			display_buffer[pos + 2] = 0xAA;
-			display_buffer[pos + 3] = 0x00;
+			data_buffer[pos] = 0x00;
+			data_buffer[pos + 1] = 0x00;
+			data_buffer[pos + 2] = 0xAA;
+			data_buffer[pos + 3] = 0x00;
 		}
 	}
 	
 	menu_display->driver()->setColumnRange(124, 127);
 	menu_display->driver()->setPagesRange(0, 7);
-	menu_display->driver()->sendData(display_buffer, LIST_ITEM_DISP_BUFFER_LEN);
+	menu_display->driver()->sendData(data_buffer, 32);
 }
 
 void MenuList::up()

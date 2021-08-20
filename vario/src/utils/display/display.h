@@ -6,7 +6,6 @@
 #include "../../hardware/ssd1306/SSD1306.h"
 #include "fonts/fonts.h"
 
-#define DISPLAY_TMP_BUFFER_SIZE         400
 
 #define DISPLAY_MAX_HEIGHT              SSD1306_MAX_HEIGHT
 #define DISPLAY_MAX_WIDTH               SSD1306_MAX_WIDTH

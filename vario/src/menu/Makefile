@@ -2,8 +2,8 @@ TOP_DIR    = ../../
 
 include $(TOP_DIR)/make_variables.mk
 
-DEPS       = menu.h
-SRCS       = menu.cpp
+DEPS       = menu.h value_edit.h
+SRCS       = menu.cpp value_edit.cpp
 OBJECTS    = $(SRCS:.cpp=.o)
 OBJECTS    := $(addprefix $(OBJ_DIR)/,$(OBJECTS))
 

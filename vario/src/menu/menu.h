@@ -9,9 +9,11 @@
 #include "icons/icon_default.h"
 #include "icons/icon_menu.h"
 
+
 void menu_init(BME280 *_sensor, Display *_display);
 
-#define LIST_ITEM_TEXT_BUFFER_LEN     13
+#define LIST_ITEM_TEXT_BUFFER_LEN     15
+#define LIST_ITEM_TEXT_LEN            13
 #define LIST_ITEM_ICON_LEN            32
 #define LIST_ITEM_DISP_BUFFER_LEN     32
 
@@ -76,6 +78,8 @@ public:
 };
 
 
+extern BME280 *sensor;
+extern Display *menu_display;
 extern MenuListItem menu_entry_back;
 
 #endif // MENU_H

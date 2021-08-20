@@ -16,6 +16,7 @@
 #include "utils/display/display.h"
 #include "vario/vario.h"
 #include "menu/menu.h"
+#include "menu/value_edit.h"
 
 #include <avr/pgmspace.h>
 
@@ -32,6 +33,7 @@ class Derr : public Base
 };
 
 
+	const PROGMEM char edit_text[] = {"Edit"};
 	const PROGMEM char item0_text[] = {"IItem  "};
 	const PROGMEM char item1_text[] = {"item_1"};
 	const PROGMEM char item2_text[] = {"list"};
@@ -70,7 +72,8 @@ int main(void) {
 	printf("Boot time: %lu ms\n", timer_get());
 
 
-	 
+	MenuValueEdit<float> edit(edit_text, -12.334, -1000, 1000, 6, 6);
+	
 	MenuListItem item0(item0_text);
 	MenuListItem item1(item1_text);
 	MenuListItem item2(item2_text);
@@ -81,7 +84,9 @@ int main(void) {
 	MenuListItem item7(item7_text);
 
 	MenuListItem *item_arr[] = {
+		&edit,
 		&menu_entry_back,
+		&item0,
 		&item1,
 		&item2,
 		&item3,
@@ -93,12 +98,13 @@ int main(void) {
 	// item_arr[0] = &item0;
 
 
-	MenuList item_list(item2_text, item_arr, 8, 0);
+	MenuList item_list(item2_text, item_arr, 10, 1);
 	item_arr[2] = &item_list;
 
 	item_list.enter();
 	ssd1306.clearBuffer();
-	
+
+
 	//Dummy menu;
 	
 	//menu.enter();

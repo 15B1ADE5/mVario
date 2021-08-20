@@ -7,13 +7,13 @@
 
 #include "icons/icon_back.h"
 
-static BME280 *sensor;
-static Display *display;
+BME280 *sensor;
+Display *menu_display;
 
 void menu_init(BME280 *_sensor, Display *_display)
 {
 	sensor = _sensor;
-	display = _display;
+	menu_display = _display;
 }
 
 const PROGMEM char menu_entry_back_text[] = {".."};
@@ -47,7 +47,7 @@ char* MenuListItem::text()
 		text_buffer[c] = pgm_read_byte( &(_text[c]) );
 		c++;
 	}
-	while( ( (text_buffer[c - 1]) != 0) && (c < LIST_ITEM_TEXT_BUFFER_LEN) );
+	while( ( (text_buffer[c - 1]) != 0) && (c < LIST_ITEM_TEXT_LEN) );
 	
 	return text_buffer;
 }
@@ -114,9 +114,9 @@ void MenuList::drawItem(MenuListItem * item, uint8_t pos, bool selected)
 	{
 		for(uint8_t byte = 0; byte < LIST_ITEM_ICON_LEN; byte++) icon[byte] = ~icon[byte];
 	}
-	display->driver()->setPagesRange(pos, pos + 1);
-	display->driver()->setColumnRange(0, 15);
-	display->driver()->sendData(display_buffer, 32);
+	menu_display->driver()->setPagesRange(pos, pos + 1);
+	menu_display->driver()->setColumnRange(0, 15);
+	menu_display->driver()->sendData(display_buffer, 32);
 
 	if(selected)
 	{
@@ -126,16 +126,17 @@ void MenuList::drawItem(MenuListItem * item, uint8_t pos, bool selected)
 	{
 		for(uint8_t line = 0; line < 4; line++) display_buffer[line] = 0x00;
 	}
-	display->driver()->setColumnRange(16, 17);
-	display->driver()->sendData(display_buffer, 4);
+	menu_display->driver()->setColumnRange(16, 17);
+	menu_display->driver()->sendData(display_buffer, 4);
 
 	char * entry_text = item->text();
 	uint8_t c = 0;
 	while(entry_text[c] != 0) c++;
 	
-	for(; c < (LIST_ITEM_TEXT_BUFFER_LEN - 1); c++) entry_text[c] = ' ';
+	for(; c < (LIST_ITEM_TEXT_LEN - 1); c++) entry_text[c] = ' ';
+	entry_text[(LIST_ITEM_TEXT_LEN - 1)] = 0;
 
-	display->print(
+	menu_display->print(
 		entry_text,
 		font_2x7,
 		false,
@@ -148,7 +149,7 @@ void MenuList::drawItem(MenuListItem * item, uint8_t pos, bool selected)
 
 void MenuList::draw()
 {
-	//display->driver()->clearBuffer();
+	//menu_display->driver()->clearBuffer();
 
 	if(position_offset > 3) position_offset = 0;
 	if( (position - position_offset) > list_length) position_offset = 0;
@@ -185,9 +186,9 @@ void MenuList::draw()
 		}
 	}
 	
-	display->driver()->setColumnRange(124, 127);
-	display->driver()->setPagesRange(0, 7);
-	display->driver()->sendData(display_buffer, LIST_ITEM_DISP_BUFFER_LEN);
+	menu_display->driver()->setColumnRange(124, 127);
+	menu_display->driver()->setPagesRange(0, 7);
+	menu_display->driver()->sendData(display_buffer, LIST_ITEM_DISP_BUFFER_LEN);
 }
 
 void MenuList::up()
@@ -227,13 +228,10 @@ void MenuList::select()
 
 void MenuList::enter()
 {
-	//display->driver()->clearBuffer();
+	//menu_display->driver()->clearBuffer();
 	draw();
 	
 	BTNstatus btn;
-
-	uint8_t key_a_delay = 0;
-	uint8_t key_c_delay = 0;
 	uint8_t btn_ticks = 0;
 	while(true)
 	{

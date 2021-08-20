@@ -51,51 +51,84 @@ BTNstatus debounce_btn_read()
 	return btn_state;
 }
 
+#ifdef REDUCE_BINARY_SIZE
+	static uint8_t btn_delay(uint8_t &delay, uint8_t val)
+	{
+		if(val)
+		{                          
+			if(delay == 0)
+			{                        
+				delay++;
+				return 1;
+			}
+			else if(delay < BTN_DELAY_COUNT)
+			{
+				delay++;
+				return 0;
+			}
+		}
+		else delay = 0;
+		return val;
+	}
+#else
+	#define BTN_DELAY(suffix)                                              \
+	{                                                                      \
+		static uint8_t key_ ## suffix ## _delay = 0;                        \
+		if(btn.btn_ ## suffix)                                              \
+		{                                                                   \
+			if(key_ ## suffix ## _delay == 0)                                \
+			{                                                                \
+				key_ ## suffix ## _delay++;                                   \
+			}                                                                \
+			else if(key_ ## suffix ## _delay < BTN_DELAY_COUNT)              \
+			{                                                                \
+				btn.btn_ ## suffix = 0;                                       \
+				key_ ## suffix ## _delay++;                                   \
+			}                                                                \
+		}                                                                   \
+		else key_ ## suffix ## _delay = 0;                                  \
+	}
 
-
-#define BTN_DELAY(suffix)                                              \
-{                                                                      \
-	static uint8_t key_ ## suffix ## _delay = 0;                        \
-	if(btn.btn_ ## suffix)                                              \
-	{                                                                   \
-		if(key_ ## suffix ## _delay == 0)                                \
-		{                                                                \
-			key_ ## suffix ## _delay++;                                   \
-		}                                                                \
-		else if(key_ ## suffix ## _delay < BTN_DELAY_COUNT)              \
-		{                                                                \
-			btn.btn_ ## suffix = 0;                                       \
-			key_ ## suffix ## _delay++;                                   \
-		}                                                                \
-	}                                                                   \
-	else key_ ## suffix ## _delay = 0;                                  \
-}
-
-#include <stdio.h>
-#define BTN_DELAY_2_ARGS(suffix1, suffix2)                             \
-{                                                                      \
-	static uint8_t key_ ## suffix1 ## suffix2 ## _delay = 0;            \
-	if(btn.btn_ ## suffix1 && btn.btn_ ## suffix2)                      \
-	{                                                                   \
-		if(key_ ## suffix1 ## suffix2 ## _delay == 0)                    \
-		{                                                                \
-			key_ ## suffix1 ## suffix2 ## _delay++;                       \
-			btn.btn_ ## suffix1 ## suffix2 = 1;                           \
-		}                                                                \
-		else if(key_ ## suffix1 ## suffix2 ## _delay < BTN_DELAY_COUNT)  \
-		{                                                                \
-			btn.btn_ ## suffix1 ## suffix2 = 0;                           \
-			key_ ## suffix1 ## suffix2 ## _delay++;                       \
-		}                                                                \
-	}                                                                   \
-	else key_ ## suffix1 ## suffix2 ## _delay = 0;                      \
-}
-
+	#define BTN_DELAY_2_ARGS(suffix1, suffix2)                             \
+	{                                                                      \
+		static uint8_t key_ ## suffix1 ## suffix2 ## _delay = 0;            \
+		if(btn.btn_ ## suffix1 && btn.btn_ ## suffix2)                      \
+		{                                                                   \
+			if(key_ ## suffix1 ## suffix2 ## _delay == 0)                    \
+			{                                                                \
+				key_ ## suffix1 ## suffix2 ## _delay++;                       \
+				btn.btn_ ## suffix1 ## suffix2 = 1;                           \
+			}                                                                \
+			else if(key_ ## suffix1 ## suffix2 ## _delay < BTN_DELAY_COUNT)  \
+			{                                                                \
+				btn.btn_ ## suffix1 ## suffix2 = 0;                           \
+				key_ ## suffix1 ## suffix2 ## _delay++;                       \
+			}                                                                \
+		}                                                                   \
+		else key_ ## suffix1 ## suffix2 ## _delay = 0;                      \
+	}
+#endif
 
 BTNstatus delay_btn_read()
 {
 	BTNstatus btn = debounce_btn_read();
 
+#ifdef REDUCE_BINARY_SIZE
+	static uint8_t key_a_delay = 0;
+	static uint8_t key_b_delay = 0;
+	static uint8_t key_c_delay = 0;
+	static uint8_t key_ab_delay = 0;
+	static uint8_t key_bc_delay = 0;
+	static uint8_t key_ac_delay = 0;
+
+	btn.btn_a = btn_delay(key_a_delay, btn.btn_a);
+	btn.btn_b = btn_delay(key_b_delay, btn.btn_b);
+	btn.btn_c = btn_delay(key_c_delay, btn.btn_c);
+
+	btn.btn_ab = btn_delay(key_ab_delay, btn.btn_a && btn.btn_b);
+	btn.btn_bc = btn_delay(key_ab_delay, btn.btn_b && btn.btn_c);
+	btn.btn_ac = btn_delay(key_ab_delay, btn.btn_a && btn.btn_c);
+#else
 	BTN_DELAY_2_ARGS(a, b);
 	BTN_DELAY_2_ARGS(b, c);
 	BTN_DELAY_2_ARGS(a, c);
@@ -103,6 +136,7 @@ BTNstatus delay_btn_read()
 	BTN_DELAY(a);
 	BTN_DELAY(b);
 	BTN_DELAY(c);
+#endif
 
 	return btn;
 }

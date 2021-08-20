@@ -16,18 +16,13 @@
 #include "menu/menu_tree/menu_tree.h"
 
 
-Settings settings;
-
-SSD1306driver ssd1306;
-Display disp(&ssd1306);
-
-BME280 sensor;
-
+Display * _display;
+BME280 * _sensor;
 
 void run_vario()
 {
-	ssd1306.clearBuffer();
-	Vario vario(&sensor, &disp);
+	_display->driver()->clearBuffer();
+	Vario vario(_sensor, _display);
 	vario.draw();
 	float buf[64] = {1};
 	for(int i = 0; i < 64; i++) printf("%f\n", buf[i] *= i);
@@ -35,7 +30,7 @@ void run_vario()
 
 bool run_menu()
 {
-	ssd1306.clearBuffer();
+	_display->driver()->clearBuffer();
 	MenuTree menu;
 	menu.enter();
 	return false;
@@ -48,6 +43,7 @@ void main_loop()
 		toneAC(1760);
 		_delay_us(100000);
 		noToneAC();
+
 		run_vario();
 		_delay_ms(3000);
 		run_menu();
@@ -63,13 +59,23 @@ int main(void) {
 	pulseToneInit();
 	btn_init();
 
+
 	printf("F_CPU: %d MHz\n", F_CPU / 1000000);
 	printf("BAT_V: %d (?)\n", get_battery_voltage());
 
+	Settings settings;
+
+	SSD1306driver ssd1306;
 	if(ssd1306.deviceOK()) printf("SSD1306: OK\n");
+
+	Display display(&ssd1306);
+	_display = &display;
+
+	BME280 sensor;
 	if(sensor.deviceOK()) printf("BME280: OK\n");
+	_sensor = &sensor;
 	
-	menu_init(&sensor, &disp, &settings);
+	menu_init(&sensor, &display, &settings);
 
 	printf("Boot time: %lu ms\n", timer_get());
 

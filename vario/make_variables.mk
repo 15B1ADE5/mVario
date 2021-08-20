@@ -28,8 +28,8 @@ CFLAGS     = -c -std=gnu99 -Os -Wall $(OPT_FLAGS)
 CXXFLAGS   = -c -Os -Wall $(OPT_FLAGS)
 ASFLAGS    = -c -Os -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)UL -x assembler-with-cpp -Wall
 
-CFLAGS     += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
-CXXFLAGS   += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD)
+CFLAGS     += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD) -DREDUCE_BINARY_SIZE
+CXXFLAGS   += -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBAUD=$(UART_BAUD) -DREDUCE_BINARY_SIZE
 
 LDFLAGS    = -Os -mmcu=$(DEVICE) $(OPT_FLAGS) -Wl,--relax,--gc-sections,-u,vfprintf -lprintf_flt -lm
 

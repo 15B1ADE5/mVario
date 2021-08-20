@@ -74,6 +74,12 @@ int8_t SSD1306driver::cmd(const uint8_t *data, const uint8_t data_len)
 	return SSD1306_ERR_CONN_FAIL;
 }
 
+#ifdef REDUCE_BINARY_SIZE
+	#define SSD1306_CHECK_RET
+#else
+	#define SSD1306_CHECK_RET    if(res == SSD1306_OK) res = 
+#endif
+
 int8_t SSD1306driver::init()
 {
 	int res = SSD1306_OK;
@@ -82,70 +88,69 @@ int8_t SSD1306driver::init()
 	res = sleep();
 
 	// Set Display Clock Divide Ratio/Oscillator Frequency
-	if(res == SSD1306_OK) res = setRefreshRate();
-	//cmd(SSD1306_CMD_SET_DISPLAY_CLOCK_DIV);
-	//cmd(SSD1306_DEFAULT_REFRESH_RATE);
+	// SSD1306_CHECK_RET setRefreshRate();
+	SSD1306_CHECK_RET cmd(SSD1306_CMD_SET_DISPLAY_CLOCK);
+	SSD1306_CHECK_RET cmd( (uint8_t) SSD1306_DISPLAY_CLOCK(
+		SSD1306_DEFAULT_CLOCK_DIV_RATIO,
+		SSD1306_DEFAULT_CLOCK_FREQUENCY)
+	);
 
 	// Set Multiplex Ratio
-	cmd(SSD1306_CMD_SET_MULTIPLEX_RATIO);
-	cmd( SSD1306_MULTIPLEX_RATIO(SSD1306_DEFAULT_MULTIPLEX_RATIO) );
+	SSD1306_CHECK_RET cmd(SSD1306_CMD_SET_MULTIPLEX_RATIO);
+	SSD1306_CHECK_RET cmd( SSD1306_MULTIPLEX_RATIO(SSD1306_DEFAULT_MULTIPLEX_RATIO) );
 
 	// Set Display Offset
-	if(res == SSD1306_OK) res = setVerticalOffset();
-	//cmd(SSD1306_CMD_SET_DISPLAY_OFFSET);
-	//cmd( SSD1306_DISPLAY_OFFSET(SSD1306_DEFAULT_VERTICAL_OFFSET) );
+	//SSD1306_CHECK_RET setVerticalOffset();
+	SSD1306_CHECK_RET cmd(SSD1306_CMD_SET_DISPLAY_OFFSET);
+	SSD1306_CHECK_RET cmd( (uint8_t) SSD1306_DISPLAY_OFFSET(SSD1306_DEFAULT_VERTICAL_OFFSET) );
 
 	// Set Display Start Line
-	if(res == SSD1306_OK) res = setStartLine();
+	SSD1306_CHECK_RET setStartLine();
 	//cmd( SSD1306_CMD_SET_START_LINE(SSD1306_DEFAULT_START_LINE) );
 
 	// Set Charge Pump
-	cmd(SSD1306_CMD_CHARGEPUMP);
-	cmd(SSD1306_CHARGEPUMP_ON);
+	SSD1306_CHECK_RET cmd(SSD1306_CMD_CHARGEPUMP);
+	SSD1306_CHECK_RET cmd(SSD1306_CHARGEPUMP_ON);
 
 	// Set Segment Re-Map (horizontal scan)
-	if(res == SSD1306_OK) res = setHorizontalScan();
+	SSD1306_CHECK_RET setHorizontalScan();
 	//cmd(SSD1306_CMD_SET_SEGMENT_REMAP_LEFT);
 
 	// Set COM Output Scan Direction (vertical scan)
-	if(res == SSD1306_OK) res = setVerticalScan();
+	SSD1306_CHECK_RET setVerticalScan();
 	//cmd(SSD1306_CMD_SET_COM_SCAN_FROM_0);
 
 	// Set COM Pins Hardware Configuration
-	cmd(SSD1306_CMD_SET_COM_PINS);
-	cmd(SSD1306_COM_PINS_A_ALTERNATIVE | SSD1306_COM_PINS_B_REMAP_OFF);
+	SSD1306_CHECK_RET cmd(SSD1306_CMD_SET_COM_PINS);
+	SSD1306_CHECK_RET cmd(SSD1306_COM_PINS_A_ALTERNATIVE | SSD1306_COM_PINS_B_REMAP_OFF);
 
 	// Set Contrast Control
-	if(res == SSD1306_OK) res = setContrast();
+	 SSD1306_CHECK_RET setContrast();
 	//cmd(SSD1306_CMD_SET_CONTRAST);
 	//cmd(SSD1306_DEFAULT_CONTRAST);
 
 	// Set Pre-Charge Period
-	if(res == SSD1306_OK) res = setPreChargePeriod();
+	SSD1306_CHECK_RET setPreChargePeriod();
 	//cmd(SSD1306_CMD_SET_PRECHARGE_PERIOD);
 	//cmd(SSD1306_DEFAULT_PRECHARGE_PERIOD);
 
 	// Set VCOMH Deselect Level
-	if(res == SSD1306_OK) res = setVCOMHdeselectLevel();
+	SSD1306_CHECK_RET setVCOMHdeselectLevel();
 	//cmd(SSD1306_CMD_SET_V_COM_DESELECT);
 	//cmd(SSD1306_DEFAULT_V_COM_DESELECT);
 
 	// Set Normal/Inverse Display
-	if(res == SSD1306_OK) res = setMode();
+	SSD1306_CHECK_RET setMode();
 	//cmd(SSD1306_CMD_MODE_NORMAL);
     
 	// Horizontal memory mode
-	if(res == SSD1306_OK) res = setMemoryMode();
+	SSD1306_CHECK_RET setMemoryMode();
 	//cmd(SSD1306_CMD_SET_MEM_ADDR_MODE);
 	//cmd(SSD1306_MEM_ADDR_MODE_HORIZONTAL);
-   
 
-	if(res == SSD1306_OK) res = clearBuffer();
-	//cmd(SSD1306_CMD_DISPLAY_ON);
-
+	SSD1306_CHECK_RET clearBuffer();
 	
-	if(res == SSD1306_OK) res = wakeup();
-	//cmd(SSD1306_CMD_DISPLAY_ON);
+	SSD1306_CHECK_RET wakeup();
 
 	return res;
 }

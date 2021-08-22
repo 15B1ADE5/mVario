@@ -111,6 +111,7 @@ SYNTAX:
 
 
   struct PulseToneState {
+    uint8_t running = 0;
     uint16_t beep = 0;
     uint16_t mute = 1;
     uint16_t beep_len = 10;

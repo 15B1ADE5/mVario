@@ -22,12 +22,12 @@ SettingsTree::SettingsTree() : MenuList(settings_tree_text)
 {
 	entry_list[0] = &menu_entry_back;
 	entry_list[1] = &sensor_entry;
-	entry_list[2] = &display_entry;
+	//entry_list[2] = &display_entry;
 
 	setup(
 		settings_tree_text,
 		entry_list,
-		3,
+		2, //3,
 		0
 	);
 }

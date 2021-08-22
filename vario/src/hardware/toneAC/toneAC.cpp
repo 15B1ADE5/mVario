@@ -42,7 +42,7 @@ void toneAC(const uint32_t frequency, const uint8_t volume) {
 
 	ICR1   = top;                                     // Set the top.
 	if (TCNT1 > top) TCNT1 = top;                     // Counter over the top, put within range.
-	OCR1A  = OCR1B = top / volume;   // Calculate & set the duty cycle (volume).
+	OCR1A  = OCR1B = top / TONEAC_VOL_10; //  / volume;   // Calculate & set the duty cycle (volume).
 }
 
 void toneACsetFrequency(const uint32_t &frequency) {
@@ -57,7 +57,7 @@ void toneACsetFrequency(const uint32_t &frequency) {
 
 	ICR1   = top;                                     // Set the top.
 	if (TCNT1 > top) TCNT1 = top;                     // Counter over the top, put within range.
-	OCR1A  = OCR1B = top / TONEAC_VOL_2;   // Calculate & set the duty cycle (volume).
+	OCR1A  = OCR1B = top / TONEAC_VOL_10; // / TONEAC_VOL_1;   // Calculate & set the duty cycle (volume).
 }
 
 void noToneAC() {
@@ -73,15 +73,27 @@ void pulseToneInit() {
 	sei();
 }
 
+
 void pulseToneStart() {
-	pulseToneInit();
-	TCNT0 = 0;
-	TIMSK0 |= (1 << TOIE0);
+
+	if(!pulse_state.running)
+	{
+		pulseToneInit();
+		TCNT0 = 0;
+		TIMSK0 |= (1 << TOIE0);
+		pulse_state.beep = 0;
+		pulse_state.mute = 1;
+		pulse_state.running = 1;
+	}
 }
 
 void pulseToneStop() {
-	TIMSK0 &= ~(1 << TOIE0);
-	noToneAC();
+	if(pulse_state.running) 
+	{
+		TIMSK0 &= ~(1 << TOIE0);
+		noToneAC();
+	}
+	pulse_state.running = 0;
 }
 
 void pulseToneSet(const uint32_t &frequency, const uint16_t beep_len, const uint16_t mute_len) {
@@ -89,10 +101,11 @@ void pulseToneSet(const uint32_t &frequency, const uint16_t beep_len, const uint
 		pulse_state.tone_frequency = frequency;
 		pulse_state.beep_len = beep_len;
 		pulse_state.mute_len = mute_len;
-		// if(pulse_state.beep) toneACsetFrequency(pulse_state.tone_frequency);
-		toneACsetFrequency(pulse_state.tone_frequency);
+		if(pulse_state.beep) toneACsetFrequency(pulse_state.tone_frequency);
+		//toneACsetFrequency(pulse_state.tone_frequency);
 		if(pulse_state.beep > beep_len) pulse_state.beep = beep_len;
-		//if(pulse_state.mute > mute_len) pulse_state.mute = mute_len;
+		if(pulse_state.mute > mute_len) pulse_state.mute = mute_len;
+		
 	}
 }
 
@@ -105,7 +118,8 @@ ISR(TIMER0_OVF_vect) {
 		pulse_state.beep--;
 	}
 	else if (pulse_state.mute) {
-		if(pulse_state.mute == 1){
+		if(pulse_state.mute == 1) {
+			toneACsetFrequency(pulse_state.tone_frequency);
 			toneAC_PLAY();
 			pulse_state.beep = pulse_state.beep_len;
 		}

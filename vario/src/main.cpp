@@ -23,9 +23,7 @@ void run_vario()
 {
 	_display->driver()->clearBuffer();
 	Vario vario(_sensor, _display);
-	vario.draw();
-	float buf[64] = {1};
-	for(int i = 0; i < 64; i++) printf("%f\n", buf[i] *= i);
+	vario.enter();
 }
 
 bool run_menu()
@@ -45,7 +43,6 @@ void main_loop()
 		noToneAC();
 
 		run_vario();
-		_delay_ms(3000);
 		run_menu();
 	}
 }
@@ -74,6 +71,12 @@ int main(void) {
 	BME280 sensor;
 	if(sensor.deviceOK()) printf("BME280: OK\n");
 	_sensor = &sensor;
+
+	sensor.setFilter(settings.sensor.filter);
+	sensor.setPressureSampling(settings.sensor.pressure_sampling);
+	sensor.setTemperatureSampling(settings.sensor.temperature_sampling);
+	sensor.setHumiditySampling(settings.sensor.humidity_sampling);
+	sensor.setStandbyDuration(settings.sensor.standby_duration);
 	
 	menu_init(&sensor, &display, &settings);
 

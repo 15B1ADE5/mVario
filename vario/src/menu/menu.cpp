@@ -3,6 +3,7 @@
 #include <util/delay.h>
 
 #include "../hardware/buttons/buttons.h"
+#include "../hardware/led/led.h"
 
 
 #include "icons/icon_back.h"
@@ -248,7 +249,7 @@ uint8_t MenuList::enter()
 	uint8_t btn_ticks = 0;
 
 	exit = false;
-
+	led_disable();
 	while(!exit)
 	{
 		for(btn_ticks = 0; btn_ticks < 3; btn_ticks++)
@@ -261,17 +262,29 @@ uint8_t MenuList::enter()
 
 		if(btn.btn_ac) 
 		{
+			led_enable();
 			break;
 		}
 
 		if(btn.btn_b) 
 		{
+			led_enable();
 			if(position == exit_entry) break;
 			select();
 		}
 
-		if(btn.btn_a) up();
-		if(btn.btn_c) down();
+		if(btn.btn_a)
+		{
+			led_enable();
+			up();
+			led_disable();
+		}
+		if(btn.btn_c)
+		{
+			led_enable();
+			down();
+			led_disable();
+		}
 	}
 	return position;
 }

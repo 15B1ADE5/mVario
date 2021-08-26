@@ -10,3 +10,5 @@ all: $(OBJECTS)
 	+$(MAKE) -C toneAC
 	+$(MAKE) -C battery
 	+$(MAKE) -C buttons
+	+$(MAKE) -C led
+	+$(MAKE) -C sound

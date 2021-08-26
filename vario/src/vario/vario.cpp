@@ -6,6 +6,7 @@
 
 #include "../utils/buffer/buffer.h"
 #include "../utils/time_clock/time_clock.h"
+#include "../hardware/led/led.h"
 
 Vario::Vario(BME280 *sensor, Display *display)
 {

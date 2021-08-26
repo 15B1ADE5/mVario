@@ -8,6 +8,8 @@
 #include "hardware/toneAC/toneAC.h"
 #include "hardware/battery/battery.h"
 #include "hardware/buttons/buttons.h"
+#include "hardware/led/led.h"
+#include "hardware/sound/sound.h"
 
 #include "utils/time_clock/time_clock.h"
 #include "utils/display/display.h"
@@ -41,14 +43,18 @@ void main_loop()
 		toneAC(1760);
 		_delay_us(100000);
 		noToneAC();
+		led_disable();
 
 		run_vario();
 		run_menu();
+		led_enable();
 	}
 }
 
 int main(void) {
+	led_init();
 	toneAC(880);
+	sound_init();
 
 	time_clock_init();
 	uart_init();
